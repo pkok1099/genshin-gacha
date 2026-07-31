@@ -1,10 +1,12 @@
 <script lang="ts">
         import '../app.css';
         import { page } from '$app/state';
+        import { navigating } from '$app/state';
         import { fly, fade } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
         import { getGameState } from '$lib/stores/gameState.svelte';
         import PrimoCounter from '$lib/components/PrimoCounter.svelte';
+        import GenshinLoader from '$lib/components/GenshinLoader.svelte';
         import { clickOutside } from '$lib/actions/clickOutside';
 
         const game = getGameState();
@@ -222,9 +224,25 @@
         </div>
 </header>
 
+<!-- ═══ Navigation Loading Screen (Genshin-style) ═══ -->
+{#if navigating && navigating.to?.url.pathname !== navigating.from?.url.pathname}
+        {@const navTo = navigating.to?.url.pathname ?? ''}
+        {@const navLabel = navTo.split('/').pop()?.replace(/-/g, ' ') || 'Home'}
+        <div
+                class="fixed inset-0 z-[60]"
+                in:fade={{ duration: 150 }}
+                out:fade={{ duration: 250 }}
+        >
+                <GenshinLoader message="Loading {navLabel}" />
+        </div>
+{/if}
+
 <!-- ═══ Page Content ═══ -->
 {#key page.url.pathname}
-        <main transition:fade={{ duration: 200 }}>
+        <main
+                in:fly={{ y: 8, duration: 300, delay: 150, easing: cubicOut }}
+                out:fade={{ duration: 100 }}
+        >
                 {@render children()}
         </main>
 {/key}
