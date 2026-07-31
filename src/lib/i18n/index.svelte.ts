@@ -1,0 +1,591 @@
+// ─── Bilingual i18n (ID / EN) ────────────────────────────────────────────────
+// Lightweight Svelte 5 runes store. No external deps. Locale persisted to
+// localStorage. Use `t('nav.home')` to resolve a dotted key against the active
+// locale; falls back to the key itself if missing.
+
+import { browser } from '$app/environment';
+
+export type Locale = 'id' | 'en';
+
+const STORAGE_KEY = 'genshin_sim_locale';
+
+// ─── Dictionary ──────────────────────────────────────────────────────────────
+
+type Dict = Record<string, string>;
+
+const ID: Dict = {
+        // ── Nav ──
+        'nav.home': 'Beranda',
+        'nav.history': 'Riwayat',
+        'nav.pity-setup': 'Atur Pity',
+        'nav.redeem': 'Redeem',
+        'nav.wish': 'Wish',
+        'nav.calculator': 'Kalkulator',
+        'nav.rng-sims': 'RNG Sims',
+        'nav.rng-overview': '◈ RNG Overview',
+        'nav.category.wish-artifact': 'Wish & Artifact',
+        'nav.category.domain-boss': 'Domain & Boss',
+        'nav.category.crafting': 'Crafting',
+        'nav.sound.on': 'Suara: Aktif',
+        'nav.sound.off': 'Suara: Mati',
+        'nav.lang': 'Bahasa',
+
+        // ── Common ──
+        'common.continue': 'Lanjut',
+        'common.cancel': 'Batal',
+        'common.confirm': 'Konfirmasi',
+        'common.reset': 'Reset',
+        'common.close': 'Tutup',
+        'common.loading': 'Memuat',
+        'common.sync': 'Sync',
+        'common.refresh': 'Refresh',
+        'common.back': 'Kembali',
+        'common.copy': 'Salin',
+        'common.copied': 'Tersalin!',
+
+        // ── Home ──
+        'home.title': 'Wish Simulator',
+        'home.tagline': 'Simulasikan gacha Genshin Impact dengan pity system akurat (soft pity 74, hard pity 90, 50/50). Semua progress tersimpan otomatis di browser.',
+        'home.live-banner': 'Banner Live',
+        'home.loading-banner': 'Memuat banner…',
+        'home.cta.wish': 'Mulai Wish',
+        'home.cta.pity-setup': 'Atur Pity',
+        'home.stats.total-wish': 'Total Wish',
+        'home.stats.5star': '5★ Diperoleh',
+        'home.stats.primogem': 'Primogem',
+        'home.section.active-banners': 'Banner Aktif',
+        'home.section.active-banners.sub': 'Pilih banner untuk wish. Banner dipakai oleh halaman /wish.',
+        'home.section.mechanics.5star': 'Mekanik 5★',
+        'home.section.mechanics.4star': 'Mekanik 4★',
+        'home.section.mechanics.economy': 'Ekonomi Primogem',
+        'home.cta.pity-setup-banner.title': 'Sudah punya pity dari akun asli?',
+        'home.cta.pity-setup-banner.body': 'Atur pity awal di Pity Setup agar simulasi sesuai kondisi akunmu.',
+        'home.cta.pity-setup-banner.btn': 'Atur Pity →',
+        'home.error.banner-failed': 'Gagal memuat banner dari API.',
+        'home.error.banner-failed.sub': 'Menggunakan banner fallback. Klik Sync untuk mencoba lagi.',
+
+        // ── Wish page ──
+        'wish.title': 'Wish — Genshin Impact Simulator',
+        'wish.mode.character': 'Character Event',
+        'wish.mode.standard': 'Standard Wish',
+        'wish.mode.novice': 'Novice Wish',
+        'wish.banner.permanent': 'Permanent',
+        'wish.banner.no-rateup': 'No rate-up',
+        'wish.banner.beginner': 'Beginner',
+        'wish.error.no-banner': 'Pilih banner dulu.',
+        'wish.error.insufficient-primo': 'Primogem tidak cukup untuk 10-pull (butuh {cost}).',
+        'wish.error.novice-maxed': 'Novice Wish sudah mencapai limit 20 pull.',
+        'wish.btn.1x': '✦ 1× Wish',
+        'wish.btn.10x': '✦✦ 10× Wish',
+        'wish.btn.primo': 'Primo',
+        'wish.novice.discount': '20% OFF',
+        'wish.novice.exhausted': 'Novice Wish sudah selesai (20/20 pull). Pilih banner lain.',
+        'wish.novice.first-used': '✓ First 10-pull (Noelle) sudah digunakan',
+        'wish.novice.first-available': '★ First 10-pull Noelle guarantee tersedia',
+        'wish.pity-lock.active': 'Pity Lock aktif:',
+        'wish.section.select-banner': 'Pilih Banner',
+        'wish.section.standard-pool': 'Standard Pool Preview',
+        'wish.section.novice-info': 'Novice Wish Info',
+        'wish.section.recent': 'Pull Terakhir',
+        'wish.section.recent.view-all': 'Lihat semua →',
+        'wish.recent.empty': 'Belum ada wish. Tekan tombol pull di atas!',
+        'wish.no-banner': 'Tidak ada banner tersedia.',
+        'wish.standard.subtitle': 'Banner permanen. 5★ split 50/50 antara character & weapon. Tidak ada rate-up, tidak ada 50/50.',
+        'wish.standard.banner-name': 'Wanderlust Invocation',
+        'wish.standard.banner-kind': 'Permanent Banner',
+        'wish.standard.pool-desc': 'No rate-up, no 50/50. Pool 5★: {chars} characters + {weapons} weapons (50/50 split).',
+        'wish.novice.banner-name': "Beginners' Wish",
+        'wish.novice.desc': 'First 10-pull: guaranteed Noelle. 10-pull diskon 20% (1,280 primo). Max 20 pull.',
+        'wish.featured': 'Featured 5★',
+        'wish.rate-up': 'Rate-Up',
+        'wish.quick-info.base-5star': 'Base 5★',
+        'wish.quick-info.soft-pity': 'Soft Pity',
+        'wish.quick-info.hard-pity': 'Hard Pity',
+
+        // ── Pity bar ──
+        'pity.title': 'Pity Counter',
+        'pity.5star': 'Pity 5★',
+        'pity.4star': 'Pity 4★',
+        'pity.soft-active': '⚠ Soft Pity Aktif!',
+        'pity.soft-near': 'Mendekati soft pity…',
+        'pity.guarantee-5': '5★ Garansi',
+        'pity.guarantee-4': '4★ Garansi',
+        'pity.guarantee.yes': 'YA',
+        'pity.guarantee.no': 'Tidak',
+        'pity.hint.guaranteed': '★ 5★ berikutnya dijamin featured (karena kalah 50/50 sebelumnya).',
+        'pity.hint.5050': '★ 5★ berikutnya akan menjalani 50/50 antara featured & standard.',
+
+        // ── History ──
+        'history.title': 'Wish History',
+        'history.subtitle': 'Statistik lengkap dari {count} wish yang sudah kamu lakukan.',
+        'history.empty.title': 'Belum ada wish',
+        'history.empty.body': 'Pergi ke halaman Wish dan tarik karakter favoritmu. Semua hasil akan muncul di sini lengkap dengan pity, 50/50, dan statistik luck.',
+        'history.empty.cta': '✦ Mulai Wish',
+        'history.btn.reset': 'Reset History',
+        'history.modal.reset.title': 'Reset History?',
+        'history.modal.reset.body': 'Semua {count} wish akan dihapus. Pity & primogem tetap dipertahankan.',
+        'history.modal.reset.sub': 'Aksi ini tidak bisa dibatalkan.',
+        'history.modal.reset.confirm': 'Reset',
+        'history.table.all': 'Semua',
+        'history.table.col.num': '#',
+        'history.table.col.icon': 'Icon',
+        'history.table.col.name': 'Name',
+        'history.table.col.type': 'Type',
+        'history.table.col.rarity': 'Rarity',
+        'history.table.col.element': 'Element',
+        'history.table.col.pity': 'Pity',
+        'history.table.col.5050': '50/50',
+        'history.table.col.time': 'Time',
+        'history.table.5050.win': 'WIN',
+        'history.table.5050.lose': 'LOSE',
+        'history.table.rate-up': 'Rate-Up',
+        'history.table.empty': 'Belum ada wish pada filter ini.',
+        'history.section.distribution': 'Distribution',
+
+        // ── Luck stats ──
+        'luck.title': 'Luck Analysis',
+        'luck.score': 'Luck Score',
+        'luck.total-wish': 'Total Wish',
+        'luck.actual-5star-rate': 'Actual 5★ Rate',
+        'luck.avg-pulls-per-5': 'Avg Pulls / 5★',
+        'luck.win-rate-5050': '50/50 Win Rate',
+        'luck.best-pity': 'Best Pity',
+        'luck.worst-pity': 'Worst Pity',
+        'luck.5050-record': '50/50 Record',
+        'luck.5050.win': 'Win',
+        'luck.5050.lose': 'Lose',
+        'luck.label.SANGAT-SIAL': 'Sangat Sial',
+        'luck.label.SIAL': 'Sial',
+        'luck.label.NORMAL': 'Normal',
+        'luck.label.BERUNTUNG': 'Beruntung',
+        'luck.label.SANGAT-BERUNTUNG': 'Sangat Beruntung',
+        'luck.label.BLESSED': 'BLESSED',
+
+        // ── Pity setup ──
+        'pity-setup.title': 'Pity Setup',
+        'pity-setup.input-pity-5': 'Pity 5★ (0-89)',
+        'pity-setup.input-pity-4': 'Pity 4★ (0-9)',
+        'pity-setup.input-primogem': 'Primogem',
+        'pity-setup.guaranteed-5': 'Guaranteed Featured 5★',
+        'pity-setup.lock-5': 'Kunci Pity 5★ (reset ke nilai ini setelah 5★)',
+        'pity-setup.lock-4': 'Kunci Pity 4★ (reset ke nilai ini setelah 4★)',
+        'pity-setup.apply': 'Terapkan',
+        'pity-setup.reset-all': 'Reset Semua',
+        'pity-setup.saved': 'Tersimpan!',
+        'pity-setup.presets': 'Presets',
+        'pity-setup.preset.fresh.desc': 'Akun baru, 0 pity, 16k primo',
+        'pity-setup.preset.soft.desc': 'Tepat di soft pity 5★ (8× 10-pull worth)',
+        'pity-setup.preset.near-hard.desc': 'Dekat hard pity 90, 1× 10-pull ready',
+        'pity-setup.preset.guaranteed.desc': '5★ berikutnya dijamin featured',
+        'pity-setup.preset.fresh': 'Fresh Account',
+        'pity-setup.preset.soft': 'Soft Pity Zone',
+        'pity-setup.preset.near-hard': 'Near Hard Pity',
+        'pity-setup.preset.guaranteed': 'Guaranteed Featured',
+
+        // ── Redeem ──
+        'redeem.title': 'Redeem Code',
+        'redeem.subtitle': 'Daftar kode aktif dari API Ennead. Klik "Redeem" untuk membuka URL resmi HoYoverse. Jika kode mengandung primogem, simulasi ini akan menambahkan saldonya secara otomatis.',
+        'redeem.section.manual': 'Manual Input',
+        'redeem.manual.desc': 'Punya kode sendiri? Masukkan di sini. Jika kode mengandung primogem, simulasi akan menambahkannya ke saldo.',
+        'redeem.manual.placeholder': 'Masukkan kode redeem…',
+        'redeem.section.active': 'Active Codes',
+        'redeem.section.expired': 'Expired Codes',
+        'redeem.empty': 'Saat ini tidak ada kode aktif. Coba refresh nanti.',
+        'redeem.error': 'Gagal memuat kode: {error}',
+        'redeem.toast.success': 'Berhasil! +{amount} Primogem ditambahkan ke saldo simulasi.',
+        'redeem.modal.title': 'Konfirmasi Redeem',
+        'redeem.modal.body': 'Kamu akan menerima {amount} Primogem dari kode {code}.',
+        'redeem.modal.sub': '(Kode akan dibuka di tab baru — simulasi ini menambah primo otomatis.)',
+        'redeem.modal.btn': 'Klaim {amount} Primo',
+        'redeem.modal.manual-title': 'Konfirmasi Primo',
+        'redeem.modal.manual-body': 'Berapa primogem yang kamu terima dari kode ini?',
+        'redeem.expired': 'Expired',
+        'redeem.active': 'Active',
+        'redeem.redeemed-at': 'Diklaim',
+
+        // ── Wish animation ──
+        'wish-anim.title.single': 'Wish Result',
+        'wish-anim.title.multi': '{count}× Wish Results',
+        'wish-anim.hint': 'Klik kartu untuk membalik • Tekan ESC atau klik di luar untuk lanjut',
+
+        // ── Calculator (new) ──
+        'calc.title': 'Wish Calculator',
+        'calc.subtitle': 'Hitung probabilitas dan rencanakan pull Anda. Semua perhitungan menggunakan rate resmi Genshin Impact.',
+        'calc.tab.pity-calc': 'Pity Calculator',
+        'calc.tab.what-if': 'What-If Simulator',
+        'calc.input.current-pity-5': 'Pity 5★ Saat Ini',
+        'calc.input.current-pity-4': 'Pity 4★ Saat Ini',
+        'calc.input.guaranteed': 'Garansi Featured 5★ Aktif',
+        'calc.input.target-pulls': 'Jumlah Pull Target',
+        'calc.input.target-pulls.hint': 'Berapa pull yang akan kamu lakukan',
+        'calc.result.title': 'Hasil',
+        'calc.result.p-5star-by': 'Peluang 5★ dalam {n} pull',
+        'calc.result.p-featured-by': 'Peluang Featured dalam {n} pull',
+        'calc.result.expected-pulls-5': 'Rata-rata pull per 5★',
+        'calc.result.expected-pulls-featured': 'Rata-rata pull per Featured',
+        'calc.result.best-case': 'Best Case',
+        'calc.result.worst-case': 'Worst Case',
+        'calc.result.best-case.body': 'Menang 50/50 di pull pertama',
+        'calc.result.worst-case.body': 'Hard pity × 2 (lose 50/50 lalu guaranteed)',
+        'calc.result.primo-cost': 'Biaya Primogem',
+        'calc.result.primo-cost.body': '{cost} primogem untuk {n} pull',
+        'calc.chart.title': 'Kurva Probabilitas Kumulatif',
+        'calc.chart.x-label': 'Pull ke-',
+        'calc.chart.y-label': 'Peluang 5★ (%)',
+        'calc.chart.soft-pity-marker': 'Soft Pity (74)',
+        'calc.chart.hard-pity-marker': 'Hard Pity (90)',
+        'calc.use-current': 'Gunakan kondisi akun saat ini',
+        'calc.scenario.a': 'Skenario A',
+        'calc.scenario.b': 'Skenario B',
+        'calc.scenario.pity': 'Pity Awal',
+        'calc.scenario.guaranteed': 'Garansi Aktif',
+        'calc.scenario.runs': 'Jumlah Simulasi',
+        'calc.scenario.runs.hint': 'Monte Carlo — semakin banyak semakin akurat',
+        'calc.scenario.run': 'Jalankan Simulasi',
+        'calc.scenario.running': 'Menjalankan…',
+        'calc.scenario.results': 'Hasil Simulasi',
+        'calc.scenario.avg-pulls': 'Rata-rata Pull / 5★',
+        'calc.scenario.featured-rate': 'Featured Rate',
+        'calc.scenario.5star-count': 'Total 5★ Diperoleh',
+        'calc.scenario.featured-count': 'Featured Diperoleh',
+        'calc.scenario.primo-spent': 'Primogem Dihabiskan',
+        'calc.scenario.distribution': 'Distribusi Pity ke 5★',
+        'calc.scenario.empty': 'Jalankan simulasi untuk melihat hasil.',
+
+        // ── RNG overview ──
+        'rng.title': 'Genshin RNG Simulators',
+        'rng.subtitle': 'Simulasi RNG permanen di Genshin Impact. Pilih simulator di bawah — setiap halaman punya engine tersendiri dengan drop rate sesuai data resmi (Genshin Wiki Loot System).',
+        'rng.open': 'Buka simulator →',
+
+        // ── Footer ──
+        'footer.banner-source': 'Data banner dari',
+        'footer.char-source': 'Karakter & gambar dari',
+        'footer.copyright': 'Genshin Impact © HoYoverse — Fan-made simulator, bukan resmi.',
+        'footer.storage': 'Semua progress tersimpan otomatis di browser (localStorage).',
+
+        // ── Area loader regions ──
+        'region.mondstadt': 'Mondstadt',
+        'region.liyue': 'Liyue',
+        'region.inazuma': 'Inazuma',
+        'region.sumeru': 'Sumeru',
+        'region.fontaine': 'Fontaine',
+        'region.natlan': 'Natlan',
+        'region.tagline': 'City of Freedom',
+        'region.tagline.liyue': 'Harbor of Stone',
+        'region.tagline.inazuma': 'Eternal Shogunate',
+        'region.tagline.sumeru': 'Nation of Wisdom',
+        'region.tagline.fontaine': 'Court of Justice',
+        'region.tagline.natlan': 'City of Fire'
+};
+
+const EN: Dict = {
+        // ── Nav ──
+        'nav.home': 'Home',
+        'nav.history': 'History',
+        'nav.pity-setup': 'Pity Setup',
+        'nav.redeem': 'Redeem',
+        'nav.wish': 'Wish',
+        'nav.calculator': 'Calculator',
+        'nav.rng-sims': 'RNG Sims',
+        'nav.rng-overview': '◈ RNG Overview',
+        'nav.category.wish-artifact': 'Wish & Artifact',
+        'nav.category.domain-boss': 'Domain & Boss',
+        'nav.category.crafting': 'Crafting',
+        'nav.sound.on': 'Sound: On',
+        'nav.sound.off': 'Sound: Off',
+        'nav.lang': 'Language',
+
+        // ── Common ──
+        'common.continue': 'Continue',
+        'common.cancel': 'Cancel',
+        'common.confirm': 'Confirm',
+        'common.reset': 'Reset',
+        'common.close': 'Close',
+        'common.loading': 'Loading',
+        'common.sync': 'Sync',
+        'common.refresh': 'Refresh',
+        'common.back': 'Back',
+        'common.copy': 'Copy',
+        'common.copied': 'Copied!',
+
+        // ── Home ──
+        'home.title': 'Wish Simulator',
+        'home.tagline': 'Simulate Genshin Impact gacha with accurate pity system (soft pity 74, hard pity 90, 50/50). All progress is saved automatically in your browser.',
+        'home.live-banner': 'Live Banner',
+        'home.loading-banner': 'Loading banner…',
+        'home.cta.wish': 'Start Wish',
+        'home.cta.pity-setup': 'Pity Setup',
+        'home.stats.total-wish': 'Total Wishes',
+        'home.stats.5star': '5★ Obtained',
+        'home.stats.primogem': 'Primogems',
+        'home.section.active-banners': 'Active Banners',
+        'home.section.active-banners.sub': 'Pick a banner to wish on. Used by the /wish page.',
+        'home.section.mechanics.5star': '5★ Mechanics',
+        'home.section.mechanics.4star': '4★ Mechanics',
+        'home.section.mechanics.economy': 'Primogem Economy',
+        'home.cta.pity-setup-banner.title': 'Already have pity from your real account?',
+        'home.cta.pity-setup-banner.body': 'Set your initial pity in Pity Setup so the simulation matches your account state.',
+        'home.cta.pity-setup-banner.btn': 'Set Pity →',
+        'home.error.banner-failed': 'Failed to load banner from API.',
+        'home.error.banner-failed.sub': 'Using fallback banner. Click Sync to try again.',
+
+        // ── Wish page ──
+        'wish.title': 'Wish — Genshin Impact Simulator',
+        'wish.mode.character': 'Character Event',
+        'wish.mode.standard': 'Standard Wish',
+        'wish.mode.novice': 'Novice Wish',
+        'wish.banner.permanent': 'Permanent',
+        'wish.banner.no-rateup': 'No rate-up',
+        'wish.banner.beginner': 'Beginner',
+        'wish.error.no-banner': 'Pick a banner first.',
+        'wish.error.insufficient-primo': 'Not enough primogems for a 10-pull (need {cost}).',
+        'wish.error.novice-maxed': 'Novice Wish has reached its 20-pull limit.',
+        'wish.btn.1x': '✦ 1× Wish',
+        'wish.btn.10x': '✦✦ 10× Wish',
+        'wish.btn.primo': 'Primo',
+        'wish.novice.discount': '20% OFF',
+        'wish.novice.exhausted': 'Novice Wish is complete (20/20 pulls). Pick another banner.',
+        'wish.novice.first-used': '✓ First 10-pull (Noelle) already used',
+        'wish.novice.first-available': '★ First 10-pull Noelle guarantee available',
+        'wish.pity-lock.active': 'Pity Lock active:',
+        'wish.section.select-banner': 'Select Banner',
+        'wish.section.standard-pool': 'Standard Pool Preview',
+        'wish.section.novice-info': 'Novice Wish Info',
+        'wish.section.recent': 'Recent Pulls',
+        'wish.section.recent.view-all': 'View all →',
+        'wish.recent.empty': 'No wishes yet. Press the pull button above!',
+        'wish.no-banner': 'No banner available.',
+        'wish.standard.subtitle': 'Permanent banner. 5★ split 50/50 between character & weapon. No rate-up, no 50/50.',
+        'wish.standard.banner-name': 'Wanderlust Invocation',
+        'wish.standard.banner-kind': 'Permanent Banner',
+        'wish.standard.pool-desc': 'No rate-up, no 50/50. Pool 5★: {chars} characters + {weapons} weapons (50/50 split).',
+        'wish.novice.banner-name': "Beginners' Wish",
+        'wish.novice.desc': 'First 10-pull: guaranteed Noelle. 10-pull discount 20% (1,280 primo). Max 20 pulls.',
+        'wish.featured': 'Featured 5★',
+        'wish.rate-up': 'Rate-Up',
+        'wish.quick-info.base-5star': 'Base 5★',
+        'wish.quick-info.soft-pity': 'Soft Pity',
+        'wish.quick-info.hard-pity': 'Hard Pity',
+
+        // ── Pity bar ──
+        'pity.title': 'Pity Counter',
+        'pity.5star': 'Pity 5★',
+        'pity.4star': 'Pity 4★',
+        'pity.soft-active': '⚠ Soft Pity Active!',
+        'pity.soft-near': 'Approaching soft pity…',
+        'pity.guarantee-5': '5★ Guarantee',
+        'pity.guarantee-4': '4★ Guarantee',
+        'pity.guarantee.yes': 'YES',
+        'pity.guarantee.no': 'No',
+        'pity.hint.guaranteed': '★ Next 5★ is guaranteed featured (because you lost the previous 50/50).',
+        'pity.hint.5050': '★ Next 5★ will go through a 50/50 between featured & standard.',
+
+        // ── History ──
+        'history.title': 'Wish History',
+        'history.subtitle': 'Full statistics from {count} wishes you have made.',
+        'history.empty.title': 'No wishes yet',
+        'history.empty.body': 'Go to the Wish page and pull your favorite character. All results will appear here with pity, 50/50, and luck stats.',
+        'history.empty.cta': '✦ Start Wishing',
+        'history.btn.reset': 'Reset History',
+        'history.modal.reset.title': 'Reset History?',
+        'history.modal.reset.body': 'All {count} wishes will be deleted. Pity & primogems are kept.',
+        'history.modal.reset.sub': 'This action cannot be undone.',
+        'history.modal.reset.confirm': 'Reset',
+        'history.table.all': 'All',
+        'history.table.col.num': '#',
+        'history.table.col.icon': 'Icon',
+        'history.table.col.name': 'Name',
+        'history.table.col.type': 'Type',
+        'history.table.col.rarity': 'Rarity',
+        'history.table.col.element': 'Element',
+        'history.table.col.pity': 'Pity',
+        'history.table.col.5050': '50/50',
+        'history.table.col.time': 'Time',
+        'history.table.5050.win': 'WIN',
+        'history.table.5050.lose': 'LOSE',
+        'history.table.rate-up': 'Rate-Up',
+        'history.table.empty': 'No wishes on this filter.',
+        'history.section.distribution': 'Distribution',
+
+        // ── Luck stats ──
+        'luck.title': 'Luck Analysis',
+        'luck.score': 'Luck Score',
+        'luck.total-wish': 'Total Wishes',
+        'luck.actual-5star-rate': 'Actual 5★ Rate',
+        'luck.avg-pulls-per-5': 'Avg Pulls / 5★',
+        'luck.win-rate-5050': '50/50 Win Rate',
+        'luck.best-pity': 'Best Pity',
+        'luck.worst-pity': 'Worst Pity',
+        'luck.5050-record': '50/50 Record',
+        'luck.5050.win': 'Win',
+        'luck.5050.lose': 'Lose',
+        'luck.label.SANGAT-SIAL': 'Very Unlucky',
+        'luck.label.SIAL': 'Unlucky',
+        'luck.label.NORMAL': 'Normal',
+        'luck.label.BERUNTUNG': 'Lucky',
+        'luck.label.SANGAT-BERUNTUNG': 'Very Lucky',
+        'luck.label.BLESSED': 'BLESSED',
+
+        // ── Pity setup ──
+        'pity-setup.title': 'Pity Setup',
+        'pity-setup.input-pity-5': 'Pity 5★ (0-89)',
+        'pity-setup.input-pity-4': 'Pity 4★ (0-9)',
+        'pity-setup.input-primogem': 'Primogems',
+        'pity-setup.guaranteed-5': 'Guaranteed Featured 5★',
+        'pity-setup.lock-5': 'Lock Pity 5★ (reset to this value after a 5★)',
+        'pity-setup.lock-4': 'Lock Pity 4★ (reset to this value after a 4★)',
+        'pity-setup.apply': 'Apply',
+        'pity-setup.reset-all': 'Reset All',
+        'pity-setup.saved': 'Saved!',
+        'pity-setup.presets': 'Presets',
+        'pity-setup.preset.fresh.desc': 'New account, 0 pity, 16k primo',
+        'pity-setup.preset.soft.desc': 'Right at 5★ soft pity (8× 10-pull worth)',
+        'pity-setup.preset.near-hard.desc': 'Near hard pity 90, 1× 10-pull ready',
+        'pity-setup.preset.guaranteed.desc': 'Next 5★ guaranteed featured',
+        'pity-setup.preset.fresh': 'Fresh Account',
+        'pity-setup.preset.soft': 'Soft Pity Zone',
+        'pity-setup.preset.near-hard': 'Near Hard Pity',
+        'pity-setup.preset.guaranteed': 'Guaranteed Featured',
+
+        // ── Redeem ──
+        'redeem.title': 'Redeem Code',
+        'redeem.subtitle': 'List of active codes from the Ennead API. Click "Redeem" to open the official HoYoverse URL. If the code grants primogems, this sim adds them automatically.',
+        'redeem.section.manual': 'Manual Input',
+        'redeem.manual.desc': 'Have your own code? Enter it here. If it grants primogems, the sim will add them to your balance.',
+        'redeem.manual.placeholder': 'Enter redeem code…',
+        'redeem.section.active': 'Active Codes',
+        'redeem.section.expired': 'Expired Codes',
+        'redeem.empty': 'No active codes right now. Try refreshing later.',
+        'redeem.error': 'Failed to load codes: {error}',
+        'redeem.toast.success': 'Success! +{amount} Primogems added to your sim balance.',
+        'redeem.modal.title': 'Confirm Redeem',
+        'redeem.modal.body': 'You will receive {amount} Primogems from code {code}.',
+        'redeem.modal.sub': '(The code will open in a new tab — this sim adds the primo automatically.)',
+        'redeem.modal.btn': 'Claim {amount} Primo',
+        'redeem.modal.manual-title': 'Confirm Primo',
+        'redeem.modal.manual-body': 'How many primogems did you receive from this code?',
+        'redeem.expired': 'Expired',
+        'redeem.active': 'Active',
+        'redeem.redeemed-at': 'Claimed',
+
+        // ── Wish animation ──
+        'wish-anim.title.single': 'Wish Result',
+        'wish-anim.title.multi': '{count}× Wish Results',
+        'wish-anim.hint': 'Click a card to flip • Press ESC or click outside to continue',
+
+        // ── Calculator (new) ──
+        'calc.title': 'Wish Calculator',
+        'calc.subtitle': 'Compute probabilities and plan your pulls. All math uses official Genshin Impact rates.',
+        'calc.tab.pity-calc': 'Pity Calculator',
+        'calc.tab.what-if': 'What-If Simulator',
+        'calc.input.current-pity-5': 'Current Pity 5★',
+        'calc.input.current-pity-4': 'Current Pity 4★',
+        'calc.input.guaranteed': 'Guaranteed Featured 5★ Active',
+        'calc.input.target-pulls': 'Target Pull Count',
+        'calc.input.target-pulls.hint': 'How many pulls you will do',
+        'calc.result.title': 'Result',
+        'calc.result.p-5star-by': 'Chance of 5★ in {n} pulls',
+        'calc.result.p-featured-by': 'Chance of Featured in {n} pulls',
+        'calc.result.expected-pulls-5': 'Avg pulls per 5★',
+        'calc.result.expected-pulls-featured': 'Avg pulls per Featured',
+        'calc.result.best-case': 'Best Case',
+        'calc.result.worst-case': 'Worst Case',
+        'calc.result.best-case.body': 'Win 50/50 on the first pull',
+        'calc.result.worst-case.body': 'Hard pity × 2 (lose 50/50, then guaranteed)',
+        'calc.result.primo-cost': 'Primogem Cost',
+        'calc.result.primo-cost.body': '{cost} primogems for {n} pulls',
+        'calc.chart.title': 'Cumulative Probability Curve',
+        'calc.chart.x-label': 'Pull #',
+        'calc.chart.y-label': 'Chance of 5★ (%)',
+        'calc.chart.soft-pity-marker': 'Soft Pity (74)',
+        'calc.chart.hard-pity-marker': 'Hard Pity (90)',
+        'calc.use-current': 'Use my current account state',
+        'calc.scenario.a': 'Scenario A',
+        'calc.scenario.b': 'Scenario B',
+        'calc.scenario.pity': 'Starting Pity',
+        'calc.scenario.guaranteed': 'Guarantee Active',
+        'calc.scenario.runs': 'Number of Simulations',
+        'calc.scenario.runs.hint': 'Monte Carlo — more is more accurate',
+        'calc.scenario.run': 'Run Simulation',
+        'calc.scenario.running': 'Running…',
+        'calc.scenario.results': 'Simulation Results',
+        'calc.scenario.avg-pulls': 'Avg Pulls / 5★',
+        'calc.scenario.featured-rate': 'Featured Rate',
+        'calc.scenario.5star-count': 'Total 5★ Obtained',
+        'calc.scenario.featured-count': 'Featured Obtained',
+        'calc.scenario.primo-spent': 'Primogems Spent',
+        'calc.scenario.distribution': 'Pity-to-5★ Distribution',
+        'calc.scenario.empty': 'Run the simulation to see results.',
+
+        // ── RNG overview ──
+        'rng.title': 'Genshin RNG Simulators',
+        'rng.subtitle': 'Simulate permanent RNG in Genshin Impact. Pick a simulator below — each page has its own engine with drop rates from official data (Genshin Wiki Loot System).',
+        'rng.open': 'Open simulator →',
+
+        // ── Footer ──
+        'footer.banner-source': 'Banner data from',
+        'footer.char-source': 'Characters & images from',
+        'footer.copyright': 'Genshin Impact © HoYoverse — Fan-made simulator, not official.',
+        'footer.storage': 'All progress is saved automatically in your browser (localStorage).',
+
+        // ── Area loader regions ──
+        'region.mondstadt': 'Mondstadt',
+        'region.liyue': 'Liyue',
+        'region.inazuma': 'Inazuma',
+        'region.sumeru': 'Sumeru',
+        'region.fontaine': 'Fontaine',
+        'region.natlan': 'Natlan',
+        'region.tagline': 'City of Freedom',
+        'region.tagline.liyue': 'Harbor of Stone',
+        'region.tagline.inazuma': 'Eternal Shogunate',
+        'region.tagline.sumeru': 'Nation of Wisdom',
+        'region.tagline.fontaine': 'Court of Justice',
+        'region.tagline.natlan': 'City of Fire'
+};
+
+const DICTS: Record<Locale, Dict> = { id: ID, en: EN };
+
+// ─── Reactive State ──────────────────────────────────────────────────────────
+
+function loadLocale(): Locale {
+        if (!browser) return 'id';
+        try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored === 'id' || stored === 'en') return stored;
+        } catch { /* ignore */ }
+        return 'id';
+}
+
+let locale: Locale = $state(loadLocale());
+
+function persistLocale(): void {
+        if (!browser) return;
+        try { localStorage.setItem(STORAGE_KEY, locale); } catch { /* ignore */ }
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+/** Resolve a dotted i18n key against the active locale. Supports {placeholder} interpolation. */
+export function t(key: string, vars?: Record<string, string | number>): string {
+        const dict = DICTS[locale] ?? ID;
+        let str = dict[key];
+        if (str === undefined) {
+                // Fall back to other locale, then to the key itself
+                str = DICTS.en[key] ?? key;
+        }
+        if (vars) {
+                for (const [k, v] of Object.entries(vars)) {
+                        str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+                }
+        }
+        return str;
+}
+
+export function getLocale(): Locale { return locale; }
+export function setLocale(l: Locale): void { locale = l; persistLocale(); }
+export function toggleLocale(): void { locale = locale === 'id' ? 'en' : 'id'; persistLocale(); }
+
+export const LOCALES: Locale[] = ['id', 'en'];
+
+// Convenience: subscribe to locale changes for $effect reactivity
+export function localeKey(): Locale { return locale; }

@@ -3,6 +3,11 @@
         import ResultCard from './ResultCard.svelte';
         import { fade, scale } from 'svelte/transition';
         import { cubicOut, backOut } from 'svelte/easing';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+        import { playReveal } from '$lib/audio/synth.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         let {
                 results = [],
@@ -30,7 +35,12 @@
                         allRevealed = false;
                         showContinue = false;
                         const totalRevealTime = REVEAL_INITIAL_DELAY_MS + results.length * REVEAL_STAGGER_MS;
-                        const t1 = setTimeout(() => { allRevealed = true; }, REVEAL_INITIAL_DELAY_MS);
+                        const t1 = setTimeout(() => {
+                                allRevealed = true;
+                                // Play reveal sound based on highest rarity in this batch
+                                const topR = results.reduce((max, r) => r.rarity > max ? r.rarity : max, 3 as 3 | 4 | 5);
+                                playReveal(topR);
+                        }, REVEAL_INITIAL_DELAY_MS);
                         const t2 = setTimeout(() => { showContinue = true; }, totalRevealTime + CONTINUE_DELAY_MS);
                         return () => { clearTimeout(t1); clearTimeout(t2); };
                 }
@@ -92,12 +102,12 @@
                         <div class="text-center mb-6" in:fade={{ duration: 250, delay: 100 }}>
                                 <h2 class="font-heading text-2xl font-semibold {has5Star ? 'text-[#E6C77A]' : has4Star ? 'text-[#B495F0]' : 'text-[#F2E6D0]'}">
                                         {#if results.length === 1}
-                                                Wish Result
+                                                {t('wish-anim.title.single')}
                                         {:else}
-                                                {results.length}× Wish Results
+                                                {t('wish-anim.title.multi', { count: results.length })}
                                         {/if}
                                 </h2>
-                                <p class="text-xs text-[#8E97AA] mt-1">Klik kartu untuk membalik • Tekan ESC atau klik di luar untuk lanjut</p>
+                                <p class="text-xs text-[#8E97AA] mt-1">{t('wish-anim.hint')}</p>
                         </div>
 
                         <!-- Cards Grid — staggered scale-in (Genshin style) -->
@@ -137,7 +147,7 @@
                                                 onclick={onClose}
                                                 class="btn-press px-8 py-2.5 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_20px_rgba(201,164,90,0.35)]"
                                         >
-                                                Continue
+                                                {t('common.continue')}
                                         </button>
                                 </div>
                         {/if}
