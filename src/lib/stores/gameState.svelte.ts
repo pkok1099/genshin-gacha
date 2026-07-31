@@ -11,6 +11,10 @@ import {
     type PullResult,
     type BannerPools
 } from '$lib/utils/gachaEngine';
+import {
+    executeStandardPull,
+    executeStandardMultiPull
+} from '$lib/utils/standardWishEngine';
 
 // ─── Public Types (matches spec) ─────────────────────────────────────────────
 
@@ -35,6 +39,8 @@ export interface WishResult {
     timestamp: number;
 }
 
+export type WishMode = 'character' | 'standard' | 'novice';
+
 export interface SimState {
     primogem: number;
     pity5: number;
@@ -44,6 +50,14 @@ export interface SimState {
     wishHistory: WishResult[];
     totalWishes: number;
     selectedBannerId: string;
+    // Pity lock: if set, after pulling 5★/4★, pity resets to this value instead of 0
+    pityLock5: number | null;
+    pityLock4: number | null;
+    // Wish mode selector
+    wishMode: WishMode;
+    // Novice wish tracking
+    novicePullsUsed: number;       // 0-20
+    noviceFirstTenUsed: boolean;   // whether first 10-pull (guaranteed Noelle) has been used
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -52,6 +66,8 @@ const STORAGE_KEY = 'genshin_sim_state_v1';
 const DEFAULT_PRIMOGEM = 16000;
 const COST_SINGLE = 160;
 const COST_TEN = 1600;
+const NOVICE_COST_TEN = 1280;  // 20% discount (8 Acquaint Fate × 160)
+const NOVICE_MAX_PULLS = 20;
 
 // ─── Banner Pool Registry (transient — not persisted) ────────────────────────
 
@@ -84,7 +100,12 @@ function loadState(): SimState {
             guaranteed4: parsed.guaranteed4 ?? false,
             wishHistory: Array.isArray(parsed.wishHistory) ? parsed.wishHistory : [],
             totalWishes: parsed.totalWishes ?? 0,
-            selectedBannerId: parsed.selectedBannerId ?? ''
+            selectedBannerId: parsed.selectedBannerId ?? '',
+            pityLock5: parsed.pityLock5 ?? null,
+            pityLock4: parsed.pityLock4 ?? null,
+            wishMode: (parsed.wishMode === 'standard' || parsed.wishMode === 'novice') ? parsed.wishMode : 'character',
+            novicePullsUsed: parsed.novicePullsUsed ?? 0,
+            noviceFirstTenUsed: parsed.noviceFirstTenUsed ?? false
         };
     } catch (err) {
         console.error('[gameState] Failed to load state, resetting:', err);
@@ -110,7 +131,12 @@ function createInitialSimState(): SimState {
         guaranteed4: false,
         wishHistory: [],
         totalWishes: 0,
-        selectedBannerId: ''
+        selectedBannerId: '',
+        pityLock5: null,
+        pityLock4: null,
+        wishMode: 'character',
+        novicePullsUsed: 0,
+        noviceFirstTenUsed: false
     };
 }
 
@@ -165,6 +191,27 @@ function setPrimogem(amount: number): void {
     simState.primogem = safe;
 }
 
+function setPityLock5(value: number | null): void {
+    // null = disabled (normal reset to 0); number = lock to that value
+    if (value === null) {
+        simState.pityLock5 = null;
+    } else {
+        simState.pityLock5 = Math.max(0, Math.min(89, Math.floor(value)));
+    }
+}
+
+function setPityLock4(value: number | null): void {
+    if (value === null) {
+        simState.pityLock4 = null;
+    } else {
+        simState.pityLock4 = Math.max(0, Math.min(9, Math.floor(value)));
+    }
+}
+
+function setWishMode(mode: WishMode): void {
+    simState.wishMode = mode;
+}
+
 function resetAll(): void {
     simState.primogem = DEFAULT_PRIMOGEM;
     simState.pity5 = 0;
@@ -174,6 +221,11 @@ function resetAll(): void {
     simState.wishHistory = [];
     simState.totalWishes = 0;
     simState.selectedBannerId = '';
+    simState.pityLock5 = null;
+    simState.pityLock4 = null;
+    simState.wishMode = 'character';
+    simState.novicePullsUsed = 0;
+    simState.noviceFirstTenUsed = false;
 }
 
 function resetHistoryOnly(): void {
@@ -206,13 +258,29 @@ function pushResultsToHistory(results: PullResult[], bannerId: string): WishResu
     return newEntries;
 }
 
-function doSinglePull(): { ok: true; result: PullResult; wish: WishResult } | { ok: false; reason: 'no_banner' | 'insufficient_primo' } {
-    const banner = getActiveBanner();
-    if (!banner) return { ok: false, reason: 'no_banner' };
-    if (!canAfford(COST_SINGLE)) return { ok: false, reason: 'insufficient_primo' };
+// ─── Apply Pity Lock (called after each pull batch) ──────────────────────────
+// If pity lock is enabled and a 5★/4★ was pulled, reset pity to locked value
+// instead of 0. This lets users test "what if I'm at soft pity" repeatedly.
 
-    setBannerPools(banner.featured5, banner.featured4, banner.standard4);
-    const gachaState: GachaState = {
+function applyPityLock(results: PullResult[], newState: GachaState): void {
+    const pulled5 = results.some((r) => r.rarity === 5);
+    const pulled4 = results.some((r) => r.rarity === 4);
+
+    simState.pity5 = newState.pity5;
+    simState.pity4 = newState.pity4;
+
+    if (pulled5 && simState.pityLock5 !== null) {
+        simState.pity5 = simState.pityLock5;
+    }
+    if (pulled4 && simState.pityLock4 !== null) {
+        simState.pity4 = simState.pityLock4;
+    }
+}
+
+// ─── Build GachaState snapshot from simState ─────────────────────────────────
+
+function snapshotGachaState(): GachaState {
+    return {
         pity5: simState.pity5,
         pity4: simState.pity4,
         guaranteed5: simState.guaranteed5,
@@ -220,41 +288,153 @@ function doSinglePull(): { ok: true; result: PullResult; wish: WishResult } | { 
         totalPulls: simState.totalWishes,
         history: []
     };
-    const { result, newState } = executePull(gachaState);
+}
+
+// ─── Character Event Wish (existing, uses registered banner) ────────────────
+
+type PullOutcome =
+    | { ok: true; result: PullResult; wish: WishResult }
+    | { ok: false; reason: 'no_banner' | 'insufficient_primo' | 'novice_maxed' };
+
+type TenPullOutcome =
+    | { ok: true; results: PullResult[]; wishes: WishResult[] }
+    | { ok: false; reason: 'no_banner' | 'insufficient_primo' | 'novice_maxed' };
+
+function doSinglePull(): PullOutcome {
+    if (simState.wishMode === 'character') {
+        const banner = getActiveBanner();
+        if (!banner) return { ok: false, reason: 'no_banner' };
+        if (!canAfford(COST_SINGLE)) return { ok: false, reason: 'insufficient_primo' };
+
+        setBannerPools(banner.featured5, banner.featured4, banner.standard4);
+        const gachaState = snapshotGachaState();
+        const { result, newState } = executePull(gachaState);
+
+        simState.primogem -= COST_SINGLE;
+        applyPityLock([result], newState);
+        simState.guaranteed5 = newState.guaranteed5;
+        simState.guaranteed4 = newState.guaranteed4;
+
+        const wishes = pushResultsToHistory([result], banner.id);
+        return { ok: true, result, wish: wishes[0] };
+    }
+
+    if (simState.wishMode === 'standard') {
+        if (!canAfford(COST_SINGLE)) return { ok: false, reason: 'insufficient_primo' };
+        const gachaState = snapshotGachaState();
+        const { result, newState } = executeStandardPull(gachaState);
+
+        simState.primogem -= COST_SINGLE;
+        applyPityLock([result], newState);
+        // Standard wish has no guaranteed flags, but keep them synced
+        simState.guaranteed5 = newState.guaranteed5;
+        simState.guaranteed4 = newState.guaranteed4;
+
+        const wishes = pushResultsToHistory([result], 'standard');
+        return { ok: true, result, wish: wishes[0] };
+    }
+
+    // Novice wish
+    if (simState.novicePullsUsed >= NOVICE_MAX_PULLS) return { ok: false, reason: 'novice_maxed' };
+    if (!canAfford(COST_SINGLE)) return { ok: false, reason: 'insufficient_primo' };
+    const gachaState = snapshotGachaState();
+    const { result, newState } = executeStandardPull(gachaState);
 
     simState.primogem -= COST_SINGLE;
-    simState.pity5 = newState.pity5;
-    simState.pity4 = newState.pity4;
+    applyPityLock([result], newState);
     simState.guaranteed5 = newState.guaranteed5;
     simState.guaranteed4 = newState.guaranteed4;
+    simState.novicePullsUsed += 1;
 
-    const wishes = pushResultsToHistory([result], banner.id);
+    const wishes = pushResultsToHistory([result], 'novice');
     return { ok: true, result, wish: wishes[0] };
 }
 
-function doTenPull(): { ok: true; results: PullResult[]; wishes: WishResult[] } | { ok: false; reason: 'no_banner' | 'insufficient_primo' } {
-    const banner = getActiveBanner();
-    if (!banner) return { ok: false, reason: 'no_banner' };
-    if (!canAfford(COST_TEN)) return { ok: false, reason: 'insufficient_primo' };
+function doTenPull(): TenPullOutcome {
+    if (simState.wishMode === 'character') {
+        const banner = getActiveBanner();
+        if (!banner) return { ok: false, reason: 'no_banner' };
+        if (!canAfford(COST_TEN)) return { ok: false, reason: 'insufficient_primo' };
 
-    setBannerPools(banner.featured5, banner.featured4, banner.standard4);
-    const gachaState: GachaState = {
-        pity5: simState.pity5,
-        pity4: simState.pity4,
-        guaranteed5: simState.guaranteed5,
-        guaranteed4: simState.guaranteed4,
-        totalPulls: simState.totalWishes,
-        history: []
-    };
-    const { results, newState } = executeMultiPull(gachaState, 10);
+        setBannerPools(banner.featured5, banner.featured4, banner.standard4);
+        const gachaState = snapshotGachaState();
+        const { results, newState } = executeMultiPull(gachaState, 10);
 
-    simState.primogem -= COST_TEN;
-    simState.pity5 = newState.pity5;
-    simState.pity4 = newState.pity4;
+        simState.primogem -= COST_TEN;
+        applyPityLock(results, newState);
+        simState.guaranteed5 = newState.guaranteed5;
+        simState.guaranteed4 = newState.guaranteed4;
+
+        const wishes = pushResultsToHistory(results, banner.id);
+        return { ok: true, results, wishes };
+    }
+
+    if (simState.wishMode === 'standard') {
+        if (!canAfford(COST_TEN)) return { ok: false, reason: 'insufficient_primo' };
+        const gachaState = snapshotGachaState();
+        const { results, newState } = executeStandardMultiPull(gachaState, 10);
+
+        simState.primogem -= COST_TEN;
+        applyPityLock(results, newState);
+        simState.guaranteed5 = newState.guaranteed5;
+        simState.guaranteed4 = newState.guaranteed4;
+
+        const wishes = pushResultsToHistory(results, 'standard');
+        return { ok: true, results, wishes };
+    }
+
+    // Novice wish
+    if (simState.novicePullsUsed >= NOVICE_MAX_PULLS) return { ok: false, reason: 'novice_maxed' };
+    if (!canAfford(NOVICE_COST_TEN)) return { ok: false, reason: 'insufficient_primo' };
+
+    const gachaState = snapshotGachaState();
+    let results: PullResult[];
+    let newState: GachaState;
+
+    if (!simState.noviceFirstTenUsed) {
+        // First 10-pull: slot 1 = guaranteed Noelle
+        // Manually craft the Noelle result
+        const noellePity5 = simState.pity5 + 1;
+        const noellePity4 = simState.pity4 + 1;
+        const noelle: PullResult = {
+            id: 'noelle',
+            name: 'Noelle',
+            rarity: 4,
+            type: 'character',
+            element: 'Geo',
+            isRateUp: true,
+            isGuaranteed: true,
+            iconUrl: 'https://genshin.jmp.blue/characters/noelle/icon-big',
+            pityAtPull: noellePity4
+        };
+
+        // Process the Noelle pull manually in the gacha state
+        const afterNoelle: GachaState = {
+            ...gachaState,
+            pity5: noellePity5,
+            pity4: 0,  // reset 4★ pity since we pulled a 4★
+            totalPulls: gachaState.totalPulls + 1,
+            history: [noelle]
+        };
+
+        // Pull remaining 9 from standard wish
+        const { results: rest, newState: afterRest } = executeStandardMultiPull(afterNoelle, 9);
+        results = [noelle, ...rest];
+        newState = afterRest;
+        simState.noviceFirstTenUsed = true;
+    } else {
+        const { results: all, newState: afterAll } = executeStandardMultiPull(gachaState, 10);
+        results = all;
+        newState = afterAll;
+    }
+
+    simState.primogem -= NOVICE_COST_TEN;
+    applyPityLock(results, newState);
     simState.guaranteed5 = newState.guaranteed5;
     simState.guaranteed4 = newState.guaranteed4;
+    simState.novicePullsUsed += 10;
 
-    const wishes = pushResultsToHistory(results, banner.id);
+    const wishes = pushResultsToHistory(results, 'novice');
     return { ok: true, results, wishes };
 }
 
@@ -271,10 +451,17 @@ export function getGameState() {
         get wishHistory() { return simState.wishHistory; },
         get totalWishes() { return simState.totalWishes; },
         get selectedBannerId() { return simState.selectedBannerId; },
+        get pityLock5() { return simState.pityLock5; },
+        get pityLock4() { return simState.pityLock4; },
+        get wishMode() { return simState.wishMode; },
+        get novicePullsUsed() { return simState.novicePullsUsed; },
+        get noviceFirstTenUsed() { return simState.noviceFirstTenUsed; },
 
         // ── Constants ──
         COST_SINGLE,
         COST_TEN,
+        NOVICE_COST_TEN,
+        NOVICE_MAX_PULLS,
         DEFAULT_PRIMOGEM,
 
         // ── Banner Registry ──
@@ -288,6 +475,9 @@ export function getGameState() {
         setPity,
         setGuaranteed5,
         setPrimogem,
+        setPityLock5,
+        setPityLock4,
+        setWishMode,
         resetAll,
         resetHistoryOnly,
 

@@ -10,6 +10,8 @@
         let guaranteed5Input = $state(game.guaranteed5);
         let primogemInput = $state(game.primogem);
         let primogemInputStr = $state(String(game.primogem));
+        let pityLock5Enabled = $state(game.pityLock5 !== null);
+        let pityLock4Enabled = $state(game.pityLock4 !== null);
 
         // Sync inputs when external state changes
         $effect(() => {
@@ -18,6 +20,8 @@
                 guaranteed5Input = game.guaranteed5;
                 primogemInput = game.primogem;
                 primogemInputStr = String(game.primogem);
+                pityLock5Enabled = game.pityLock5 !== null;
+                pityLock4Enabled = game.pityLock4 !== null;
         });
 
         let saved = $state(false);
@@ -30,6 +34,9 @@
                 game.setGuaranteed5(guaranteed5Input);
                 game.setPrimogem(primoAmount);
                 primogemInput = primoAmount;
+                // Apply pity locks
+                game.setPityLock5(pityLock5Enabled ? pity5Input : null);
+                game.setPityLock4(pityLock4Enabled ? pity4Input : null);
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
@@ -41,6 +48,8 @@
                 guaranteed5Input = false;
                 primogemInput = game.DEFAULT_PRIMOGEM;
                 primogemInputStr = String(game.DEFAULT_PRIMOGEM);
+                pityLock5Enabled = false;
+                pityLock4Enabled = false;
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
@@ -228,6 +237,56 @@
                         >
                                 <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {guaranteed5Input ? 'translate-x-6' : ''}"></span>
                         </button>
+                </div>
+
+                <!-- Pity Lock Section -->
+                <div class="space-y-2 pt-2 border-t border-[#24314A]">
+                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Pity Lock (Reset Behavior)</div>
+                        <div class="text-[11px] text-[#8E97AA] mb-2">
+                                Secara default, pity reset ke 0 setelah dapat 5★/4★. Aktifkan lock untuk <span class="text-[#E6C77A] font-semibold">reset ke nilai yang di-set</span> alih-alih ke 0 — berguna untuk testing soft pity berulang.
+                        </div>
+
+                        <!-- 5★ Pity Lock -->
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
+                                <div>
+                                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Lock Pity 5★</div>
+                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
+                                                Setelah dapat 5★, reset pity ke <span class="font-mono text-[#E6C77A]">{pity5Input}</span> (bukan 0)
+                                        </div>
+                                </div>
+                                <button
+                                        onclick={() => pityLock5Enabled = !pityLock5Enabled}
+                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {pityLock5Enabled ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}"
+                                        aria-pressed={pityLock5Enabled}
+                                        aria-label="Toggle 5★ pity lock"
+                                >
+                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {pityLock5Enabled ? 'translate-x-6' : ''}"></span>
+                                </button>
+                        </div>
+
+                        <!-- 4★ Pity Lock -->
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
+                                <div>
+                                        <div class="text-xs font-bold text-[#B495F0] uppercase tracking-wider">Lock Pity 4★</div>
+                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
+                                                Setelah dapat 4★, reset pity ke <span class="font-mono text-[#B495F0]">{pity4Input}</span> (bukan 0)
+                                        </div>
+                                </div>
+                                <button
+                                        onclick={() => pityLock4Enabled = !pityLock4Enabled}
+                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {pityLock4Enabled ? 'bg-[#8D72C9]' : 'bg-[#24314A]'}"
+                                        aria-pressed={pityLock4Enabled}
+                                        aria-label="Toggle 4★ pity lock"
+                                >
+                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {pityLock4Enabled ? 'translate-x-6' : ''}"></span>
+                                </button>
+                        </div>
+
+                        {#if pityLock5Enabled || pityLock4Enabled}
+                                <div class="text-[10px] text-[#E0B25A] bg-[#E0B25A]/10 border border-[#E0B25A]/30 rounded-md p-2 leading-relaxed">
+                                        ⚠ Pity lock aktif. Pull 5★/4★ akan reset ke nilai yang di-set, bukan ke 0. Ini untuk simulasi/testing — di game asli pity selalu reset ke 0.
+                                </div>
+                        {/if}
                 </div>
 
                 <!-- Actions -->
