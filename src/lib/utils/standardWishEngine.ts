@@ -268,19 +268,6 @@ export function executeStandardMultiPull(state: GachaState, count: number): { re
     return { results, newState: s };
 }
 
-// ─── Create Initial State ────────────────────────────────────────────────────
-
-export function createInitialStandardState(): GachaState {
-    return {
-        pity5: 0,
-        pity4: 0,
-        guaranteed5: false,
-        guaranteed4: false,
-        totalPulls: 0,
-        history: []
-    };
-}
-
 // ─── Pool Data (for UI display) ──────────────────────────────────────────────
 
 export const STANDARD_WISH_POOLS = {

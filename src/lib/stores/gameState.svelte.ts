@@ -3,7 +3,6 @@
 // to localStorage under the `genshin_sim_` prefix. Browser-only — SSR-safe.
 
 import {
-    createInitialState,
     executePull,
     executeMultiPull,
     setBannerPools,
@@ -20,7 +19,6 @@ import {
 
 export type Rarity = 3 | 4 | 5;
 export type ItemType = 'character' | 'weapon';
-export type BannerKind = 'character' | 'weapon';
 
 export interface WishResult {
     id: string;

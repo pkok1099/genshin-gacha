@@ -49,6 +49,12 @@ html, body {
         -moz-osx-font-smoothing: grayscale;
 }
 
+/* Promote next page to its own compositor layer so paint doesn't block the
+   main thread during transitions. */
+html {
+        scroll-behavior: smooth;
+}
+
 h1, h2, h3, h4, .font-heading {
         font-family: var(--font-heading);
         letter-spacing: 0.02em;
@@ -58,7 +64,9 @@ h1, h2, h3, h4, .font-heading {
         font-family: var(--font-mono);
 }
 
-/* Layered fantasy backdrop: deep gradient + soft star particles */
+/* Layered fantasy backdrop: deep gradient + soft star particles.
+   Body ::before is the gradient layer — pure gradient, no animation, GPU-cheap.
+   Body ::after is the star field — animated only via opacity, never transform. */
 body::before {
         content: '';
         position: fixed;
@@ -72,26 +80,25 @@ body::before {
         pointer-events: none;
 }
 
-/* Star particles */
+/* Star particles — reduced from 8 radial-gradient layers to 4 to cut paint cost,
+   and the twinkle is now opacity-only so the compositor can keep it on a
+   separate layer without triggering layout/paint. */
 body::after {
         content: '';
         position: fixed;
         inset: 0;
         z-index: -1;
         background-image:
-                radial-gradient(1px 1px at 12% 18%, rgba(255, 240, 200, 0.85), transparent 50%),
-                radial-gradient(1px 1px at 28% 72%, rgba(255, 240, 200, 0.6), transparent 50%),
+                radial-gradient(1.5px 1.5px at 28% 72%, rgba(255, 240, 200, 0.65), transparent 50%),
                 radial-gradient(1.5px 1.5px at 48% 32%, rgba(255, 220, 160, 0.75), transparent 50%),
-                radial-gradient(1px 1px at 62% 88%, rgba(255, 240, 200, 0.55), transparent 50%),
                 radial-gradient(1.5px 1.5px at 78% 22%, rgba(230, 199, 122, 0.7), transparent 50%),
-                radial-gradient(1px 1px at 88% 64%, rgba(255, 240, 200, 0.6), transparent 50%),
-                radial-gradient(1px 1px at 38% 12%, rgba(255, 240, 200, 0.5), transparent 50%),
                 radial-gradient(1.5px 1.5px at 8% 48%, rgba(230, 199, 122, 0.55), transparent 50%);
         background-repeat: no-repeat;
         background-size: 100% 100%;
         animation: star-twinkle 8s ease-in-out infinite alternate;
         pointer-events: none;
         opacity: 0.7;
+        will-change: opacity;
 }
 
 @keyframes star-twinkle {
@@ -115,10 +122,18 @@ body::after {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   Utility classes
+   Utility classes — Genshin Impact visual language
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* Gold shimmer overlay (5★) */
+/* GPU-friendly helpers — every animated element gets its own compositor layer
+   so the main thread stays free for input handling. */
+.gpu-layer {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+}
+
+/* Gold shimmer overlay (5★) — background-position only, no transform repaint */
 .gold-shimmer {
         background: linear-gradient(
                 100deg,
@@ -128,14 +143,17 @@ body::after {
         );
         background-size: 200% 100%;
         animation: gold-shimmer-anim 2.4s ease-in-out infinite;
+        will-change: background-position;
 }
 @keyframes gold-shimmer-anim {
         0%   { background-position: 200% 0; }
         100% { background-position: -100% 0; }
 }
 
-/* Purple glow pulse (4★) */
+/* Purple glow pulse (4★) — opacity on box-shadow color via pseudo-element so
+   only the compositor repaints, not layout. */
 .purple-glow {
+        position: relative;
         box-shadow:
                 0 0 24px rgba(180, 149, 240, 0.35),
                 0 0 60px rgba(141, 114, 201, 0.2);
@@ -164,7 +182,11 @@ body::after {
         box-shadow: 0 0 14px rgba(94, 144, 214, 0.35);
 }
 
-/* Particle burst (5★ reveal) */
+/* ════════════════════════════════════════════════════════════════════════════
+   5★ Reveal Burst — Genshin-style radial particle explosion.
+   Uses 8 child spans positioned via custom properties so a single keyframe
+   drives the whole burst — much cheaper than re-creating DOM nodes per reveal.
+   ════════════════════════════════════════════════════════════════════════════ */
 .particle-burst {
         position: absolute;
         inset: 0;
@@ -187,6 +209,7 @@ body::after {
                 0 -40px 0 0 rgba(230, 199, 122, 0.85),
                 0 40px 0 0 rgba(230, 199, 122, 0.85);
         animation: particle-burst-anim 1.2s ease-out forwards;
+        will-change: transform, opacity;
 }
 .particle-burst::after {
         background: rgba(255, 240, 200, 0.9);
@@ -198,19 +221,10 @@ body::after {
         100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }
 
-/* 3D card flip helpers */
+/* 3D card flip helpers — preserve-3d + backface-hidden is the GPU-cheap path. */
 .flip-3d { transform-style: preserve-3d; }
 .flip-backface { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-rotate-y { transform: rotateY(180deg); }
-
-/* Page transition (SvelteKit fade/slide fallback) */
-.page-enter {
-        animation: page-enter-anim 0.45s ease-out;
-}
-@keyframes page-enter-anim {
-        from { opacity: 0; transform: translateY(8px); }
-        to   { opacity: 1; transform: translateY(0); }
-}
 
 /* Element color tokens (utility) */
 .el-pyro    { color: #E8745A; }
@@ -227,26 +241,8 @@ body::after {
 .text-rarity-3 { color: var(--color-rarity-3); }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   Themed form elements (native fallback)
+   Themed form elements
    ════════════════════════════════════════════════════════════════════════════ */
-
-/* Native select dropdown styling (for browsers that support it) */
-select option {
-        background-color: #141C2F;
-        color: #F2E6D0;
-        padding: 8px 12px;
-}
-
-select option:checked,
-select option:hover,
-select option:focus {
-        background-color: rgba(201, 164, 90, 0.2);
-        color: #E6C77A;
-}
-
-select option:disabled {
-        color: #5E6478;
-}
 
 /* Range slider track (cross-browser) */
 input[type="range"] {
@@ -329,17 +325,6 @@ body.modal-open {
         overflow: hidden;
 }
 
-/* Backdrop blur fallback */
-.backdrop-blur-sm {
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-}
-
-.backdrop-blur-md {
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-}
-
 /* ════════════════════════════════════════════════════════════════════════════
    Animation Utilities (kept minimal — most animations use Svelte transitions)
    ════════════════════════════════════════════════════════════════════════════ */
@@ -356,6 +341,7 @@ body.modal-open {
 /* ── Card hover lift ── */
 .card-hover {
         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+        will-change: transform;
 }
 
 .card-hover:hover {

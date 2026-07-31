@@ -43,6 +43,29 @@
         // Determine if current page is under /rng/*
         let isRngActive = $derived(page.url.pathname.startsWith('/rng'));
 
+        // ── Smart loader: only show GenshinLoader if a navigation is taking
+        //    longer than 280ms. Fast route changes (<280ms, the common case for
+        //    client-side SvelteKit navigation) just get a thin progress bar at
+        //    the top of the page — much smoother than a full overlay every click.
+        let showFullLoader = $state(false);
+        let loaderTimer: ReturnType<typeof setTimeout> | null = null;
+
+        $effect(() => {
+                const nav = navigating;
+                if (nav && nav.to?.url.pathname !== nav.from?.url.pathname) {
+                        // Defer the heavy loader — if navigation completes fast, never show it.
+                        if (loaderTimer) clearTimeout(loaderTimer);
+                        loaderTimer = setTimeout(() => {
+                                // Re-check that we're still navigating before showing.
+                                if (navigating) showFullLoader = true;
+                        }, 280);
+                } else {
+                        // Navigation ended — hide loader immediately and cancel pending show.
+                        if (loaderTimer) { clearTimeout(loaderTimer); loaderTimer = null; }
+                        showFullLoader = false;
+                }
+        });
+
         function isActive(href: string): boolean {
                 if (href === '/') return page.url.pathname === '/';
                 return page.url.pathname === href;
@@ -224,23 +247,33 @@
         </div>
 </header>
 
-<!-- ═══ Navigation Loading Screen (Genshin-style) ═══ -->
+<!-- ═══ Thin progress bar — appears immediately on every navigation, animates
+     cheaply via scaleX on a GPU layer. Disappears on completion. ═══ -->
 {#if navigating && navigating.to?.url.pathname !== navigating.from?.url.pathname}
-        {@const navTo = navigating.to?.url.pathname ?? ''}
+        <div class="fixed top-14 left-0 right-0 z-[55] h-0.5 pointer-events-none overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-transparent via-[#E6C77A] to-transparent origin-left animate-nav-progress gpu-layer"></div>
+        </div>
+{/if}
+
+<!-- ═══ Full Genshin-style loading screen — only when navigation is slow (>280ms) ═══ -->
+{#if showFullLoader}
+        {@const navTo = navigating?.to?.url.pathname ?? ''}
         {@const navLabel = navTo.split('/').pop()?.replace(/-/g, ' ') || 'Home'}
         <div
                 class="fixed inset-0 z-[60]"
                 in:fade={{ duration: 150 }}
-                out:fade={{ duration: 250 }}
+                out:fade={{ duration: 200 }}
         >
                 <GenshinLoader message="Loading {navLabel}" />
         </div>
 {/if}
 
-<!-- ═══ Page Content ═══ -->
+<!-- ═══ Page Content — smooth cross-fade without delayed fly-in.
+     Previous version had delay:150 which made every page feel sluggish.
+     Now we do a quick fade (no translate) so the new page feels instant. ═══ -->
 {#key page.url.pathname}
         <main
-                in:fly={{ y: 8, duration: 300, delay: 150, easing: cubicOut }}
+                in:fade={{ duration: 180 }}
                 out:fade={{ duration: 100 }}
         >
                 {@render children()}
@@ -260,3 +293,14 @@
                 <p class="text-[#5E6478]">Semua progress tersimpan otomatis di browser (localStorage).</p>
         </div>
 </footer>
+
+<style>
+        @keyframes nav-progress {
+                0%   { transform: scaleX(0); opacity: 0.9; }
+                50%  { transform: scaleX(0.7); opacity: 1; }
+                100% { transform: scaleX(1); opacity: 0; }
+        }
+        .animate-nav-progress {
+                animation: nav-progress 1.2s ease-out forwards;
+        }
+</style>

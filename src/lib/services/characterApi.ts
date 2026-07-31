@@ -1,31 +1,11 @@
-// ─── Character/Weapon API Service (genshin.jmp.blue) ──────────────────────────
+// ─── Character/Weapon Image & Slug Service (genshin.jmp.blue) ────────────────
+// Only image-URL builders and the slug map are used by the UI. The fetch helpers
+// were never called anywhere in the app, so they have been removed to keep the
+// bundle lean and avoid shipping dead async code.
 
 const API_BASE = 'https://genshin.jmp.blue';
 
-export interface GenshinCharacter {
-    id: string;
-    name: string;
-    rarity: number;
-    vision: string;
-    vision_key: string;
-    weapon: string;
-    weapon_type: string;
-    nation: string;
-    title: string;
-}
-
-export interface GenshinWeapon {
-    id: string;
-    name: string;
-    rarity: number;
-    type: string;
-}
-
 // ─── Image URLs ──────────────────────────────────────────────────────────────
-
-export function characterIconUrl(slug: string): string {
-    return `${API_BASE}/characters/${slug}/icon`;
-}
 
 export function characterIconBigUrl(slug: string): string {
     return `${API_BASE}/characters/${slug}/icon-big`;
@@ -33,40 +13,6 @@ export function characterIconBigUrl(slug: string): string {
 
 export function characterGachaSplashUrl(slug: string): string {
     return `${API_BASE}/characters/${slug}/gacha-splash`;
-}
-
-export function weaponIconUrl(slug: string): string {
-    return `${API_BASE}/weapons/${slug}/icon`;
-}
-
-// ─── Fetchers (with timeout + error handling) ────────────────────────────────
-
-async function fetchWithTimeout(url: string, ms = 8000): Promise<Response> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ms);
-    try {
-        return await fetch(url, { signal: controller.signal });
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
-export async function fetchCharacter(slug: string): Promise<GenshinCharacter> {
-    const res = await fetchWithTimeout(`${API_BASE}/characters/${slug}`);
-    if (!res.ok) throw new Error(`Character API error: ${res.status}`);
-    return res.json();
-}
-
-export async function fetchAllCharacterSlugs(): Promise<string[]> {
-    const res = await fetchWithTimeout(`${API_BASE}/characters`);
-    if (!res.ok) throw new Error(`Characters list error: ${res.status}`);
-    return res.json();
-}
-
-export async function fetchAllWeaponSlugs(): Promise<string[]> {
-    const res = await fetchWithTimeout(`${API_BASE}/weapons`);
-    if (!res.ok) throw new Error(`Weapons list error: ${res.status}`);
-    return res.json();
 }
 
 // ─── Slug Helper ─────────────────────────────────────────────────────────────
@@ -120,6 +66,5 @@ export function slugifyName(name: string): string {
         'Iansan': 'iansan',
         'Ifa': 'ifa'
     };
-    if (map[name]) return map[name];
-    return name.toLowerCase().replace(/\s+/g, '-');
+    return map[name] ?? name.toLowerCase().replace(/\s+/g, '-');
 }

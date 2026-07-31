@@ -268,27 +268,5 @@ export function executeMultiPull(state: GachaState, count: number): { results: P
     return { results, newState: s };
 }
 
-// ─── Initial State ───────────────────────────────────────────────────────────
-
-export function createInitialState(): GachaState {
-    return {
-        pity5: 0,
-        pity4: 0,
-        guaranteed5: false,
-        guaranteed4: false,
-        totalPulls: 0,
-        history: []
-    };
-}
-
-// ─── Stats Helpers (exported for testing / luck module) ──────────────────────
-
-export const GACHA_CONSTANTS = {
-    BASE_5STAR_RATE,
-    SOFT_PITY_START,
-    HARD_PITY,
-    BASE_4STAR_RATE,
-    HARD_PITY_4STAR,
-    RATE_UP_5STAR_CHANCE,
-    RATE_UP_4STAR_CHANCE
-} as const;
+// (createInitialState & GACHA_CONSTANTS removed — unused; bannerStore + gameState
+// build GachaState snapshots inline, and no consumer reads these exports.)

@@ -14,9 +14,10 @@
         let isFlipped: boolean = $state(false);
         let imgLoaded: boolean = $state(false);
 
+        // Single timer per card — cleared on reset. Genshin staggers flips ~120ms.
         $effect(() => {
                 if (revealed) {
-                        const delay = index * 180;
+                        const delay = index * 120;
                         const timer = setTimeout(() => { isFlipped = true; }, delay);
                         return () => clearTimeout(timer);
                 } else {
@@ -66,7 +67,9 @@
         onclick={() => { isFlipped = !isFlipped; }}
         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); isFlipped = !isFlipped; } }}
 >
-        <div class="relative w-full h-full transition-transform duration-700 flip-3d {isFlipped ? 'flip-rotate-y' : ''}">
+        <!-- Flip container — gpu-layer so the rotateY transform stays on the
+             compositor and doesn't trigger layout on the parent. -->
+        <div class="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flip-3d gpu-layer {isFlipped ? 'flip-rotate-y' : ''}">
 
                 <!-- Back (unrevealed) -->
                 <div class="absolute inset-0 flip-backface rounded-lg border-2 border-[#C9A45A]/40 bg-gradient-to-br from-[#24314A] via-[#1A2337] to-[#0B1020] flex items-center justify-center">
@@ -101,6 +104,8 @@
                                 <img
                                         src={result.icon}
                                         alt={result.name}
+                                        loading="lazy"
+                                        decoding="async"
                                         class="w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
                                         onload={() => imgLoaded = true}
                                         onerror={(e: Event) => {
