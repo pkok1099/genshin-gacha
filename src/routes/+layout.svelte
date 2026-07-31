@@ -9,12 +9,12 @@
         let { children } = $props();
 
         const navItems: { href: string; label: string; icon: string }[] = [
-                { href: '/',         label: 'Home',       icon: '⌂' },
-                { href: '/wish',     label: 'Wish',       icon: '✦' },
-                { href: '/history',  label: 'History',    icon: '☰' },
+                { href: '/',           label: 'Home',       icon: '⌂' },
+                { href: '/history',    label: 'History',    icon: '☰' },
                 { href: '/pity-setup', label: 'Pity Setup', icon: '⚙' },
-                { href: '/redeem',   label: 'Redeem',     icon: '✉' },
-                { href: '/rng',      label: 'RNG Sims',   icon: '◈' }
+                { href: '/redeem',     label: 'Redeem',     icon: '✉' },
+                { href: '/rng',        label: 'RNG Sims',   icon: '◈' },
+                { href: '/wish',       label: 'Wish',       icon: '✦' }
         ];
 
         let mobileOpen = $state(false);
