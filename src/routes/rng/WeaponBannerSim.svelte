@@ -12,16 +12,16 @@
                 type WeaponEntry
         } from '$lib/utils/weaponBannerEngine';
 
-        // Featured 5★ weapons (sample current patch)
+        // Featured 5★ weapons (slugs verified against genshin.jmp.blue)
         const FEATURED_5STAR: WeaponEntry[] = [
-                { id: 'absolution', name: 'Absolution', rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/absolution/icon' },
-                { id: 'cranes-echoing-call', name: "Crane's Echoing Call", rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/cranes-echoing-call/icon' }
+                { id: 'uraku-misugiri', name: 'Uraku Misugiri', rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/uraku-misugiri/icon' },
+                { id: 'crane-s-echoing-call', name: "Crane's Echoing Call", rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/crane-s-echoing-call/icon' }
         ];
 
         const FEATURED_4STAR: WeaponEntry[] = [
                 { id: 'sacrificial-sword', name: 'Sacrificial Sword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-sword/icon' },
                 { id: 'sacrificial-greatsword', name: 'Sacrificial Greatsword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-greatsword/icon' },
-                { id: 'dragons-bane', name: "Dragon's Bane", rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/dragons-bane/icon' },
+                { id: 'dragon-s-bane', name: "Dragon's Bane", rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/dragon-s-bane/icon' },
                 { id: 'rainslasher', name: 'Rainslasher', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/rainslasher/icon' },
                 { id: 'eye-of-perception', name: 'Eye of Perception', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/eye-of-perception/icon' }
         ];
@@ -95,6 +95,23 @@
                 if (r === 4) return 'text-[#B495F0]';
                 return 'text-[#5E90D6]';
         }
+
+        // Build inline SVG data URL for weapon icon fallback (initial letter + rarity stars)
+        function fallbackDataUrl(name: string, rarity: number): string {
+                const color = rarity === 5 ? '#E6C77A' : rarity === 4 ? '#B495F0' : '#5E90D6';
+                const letter = name.charAt(0).toUpperCase();
+                const stars = '★'.repeat(rarity);
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#0B1020" width="100" height="100"/><text fill="${color}" font-size="40" x="50" y="55" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel, serif" font-weight="700">${letter}</text><text fill="${color}" font-size="10" x="50" y="80" text-anchor="middle">${stars}</text></svg>`;
+                return 'data:image/svg+xml,' + encodeURIComponent(svg);
+        }
+
+        function handleImgError(e: Event, name: string, rarity: number) {
+                const img = e.currentTarget as HTMLImageElement;
+                const fallback = fallbackDataUrl(name, rarity);
+                if (img.src !== fallback) {
+                        img.src = fallback;
+                }
+        }
 </script>
 
 <div class="space-y-5">
@@ -125,7 +142,7 @@
                                         <div class="flex items-center gap-3">
                                                 <div class="w-14 h-14 rounded-md overflow-hidden border border-[#C9A45A]/40 bg-[#0B1020] shrink-0">
                                                         <img src={w.iconUrl} alt={w.name} class="w-full h-full object-cover"
-                                                                onerror={(e: Event) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }} />
+                                                                onerror={(e: Event) => handleImgError(e, w.name, w.rarity)} />
                                                 </div>
                                                 <div class="min-w-0">
                                                         <div class="text-[#E6C77A] text-[10px] tracking-wider">★ ★ ★ ★ ★</div>
@@ -221,7 +238,7 @@
                                         >
                                                 <div class="w-10 h-10 rounded-md overflow-hidden bg-[#0B1020] mb-1">
                                                         <img src={r.iconUrl} alt={r.name} class="w-full h-full object-cover"
-                                                                onerror={(e: Event) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.2'; }} />
+                                                                onerror={(e: Event) => handleImgError(e, r.name, r.rarity)} />
                                                 </div>
                                                 <div class="text-[9px] {rarityText(r.rarity)} font-bold">{'★'.repeat(r.rarity)}</div>
                                                 <div class="text-[9px] text-[#F2E6D0] font-semibold leading-tight truncate w-full">{r.name}</div>

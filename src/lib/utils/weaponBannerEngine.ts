@@ -269,7 +269,7 @@ const STANDARD_5STAR_WEAPONS: WeaponEntry[] = [
     { id: 'skyward-blade',      name: 'Skyward Blade' },
     { id: 'lost-prayer-to-the-sacred-winds', name: 'Lost Prayer to the Sacred Winds' },
     { id: 'skyward-atlas',      name: 'Skyward Atlas' },
-    { id: 'wolfs-gravestone',   name: "Wolf's Gravestone" },
+    { id: 'wolf-s-gravestone',  name: "Wolf's Gravestone" },
     { id: 'skyward-pride',      name: 'Skyward Pride' },
     { id: 'primordial-jade-winged-spear', name: 'Primordial Jade Winged-Spear' },
     { id: 'skyward-spine',      name: 'Skyward Spine' }
