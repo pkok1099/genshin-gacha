@@ -1,6 +1,6 @@
 <script lang="ts">
         import { onMount } from 'svelte';
-        import { getGachaStore } from '$lib/stores/gacha';
+        import { getGachaStore } from '$lib/stores/gacha.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
         import PullButton from '$lib/components/PullButton.svelte';
         import ResultModal from '$lib/components/ResultModal.svelte';

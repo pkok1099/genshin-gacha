@@ -140,7 +140,7 @@ export function executePull(state: GachaState): { result: PullResult; newState: 
                 // ── 5★ Obtained ──
                 let isRateUp = false;
                 let isGuaranteed = s.guaranteed5;
-                let char: { id: string; name: string; element?: string };
+                let char: { id: string; name: string; element?: string; bannerIconUrl?: string };
 
                 if (s.guaranteed5 || rng() < RATE_UP_5STAR_CHANCE) {
                         // Win 50/50 or guaranteed
@@ -170,7 +170,7 @@ export function executePull(state: GachaState): { result: PullResult; newState: 
         } else if (s.pity4 >= HARD_PITY_4STAR || roll < rate5 + BASE_4STAR_RATE) {
                 // ── 4★ Obtained ──
                 let isRateUp = false;
-                let char: { id: string; name: string; element?: string };
+                let char: { id: string; name: string; element?: string; bannerIconUrl?: string };
 
                 if (s.guaranteed4 || rng() < RATE_UP_4STAR_CHANCE) {
                         if (featured4Star.length > 0) {

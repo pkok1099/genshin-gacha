@@ -1,5 +1,5 @@
 <script lang="ts">
-        import type { BannerData } from '$lib/stores/gacha';
+        import type { BannerData } from '$lib/stores/gacha.svelte';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
 
         let { banner, selected = false, onclick }: { banner: BannerData; selected?: boolean; onclick?: () => void } = $props();
