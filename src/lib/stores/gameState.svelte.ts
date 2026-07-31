@@ -159,6 +159,12 @@ function setGuaranteed5(value: boolean): void {
     simState.guaranteed5 = value;
 }
 
+function setPrimogem(amount: number): void {
+    // Clamp to non-negative integer; allow 0.
+    const safe = Math.max(0, Math.floor(Number.isFinite(amount) ? amount : 0));
+    simState.primogem = safe;
+}
+
 function resetAll(): void {
     simState.primogem = DEFAULT_PRIMOGEM;
     simState.pity5 = 0;
@@ -281,6 +287,7 @@ export function getGameState() {
         canAfford,
         setPity,
         setGuaranteed5,
+        setPrimogem,
         resetAll,
         resetHistoryOnly,
 

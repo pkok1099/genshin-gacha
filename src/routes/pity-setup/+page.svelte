@@ -8,19 +8,28 @@
         let pity5Input = $state(game.pity5);
         let pity4Input = $state(game.pity4);
         let guaranteed5Input = $state(game.guaranteed5);
+        let primogemInput = $state(game.primogem);
+        let primogemInputStr = $state(String(game.primogem));
 
         // Sync inputs when external state changes
         $effect(() => {
                 pity5Input = game.pity5;
                 pity4Input = game.pity4;
                 guaranteed5Input = game.guaranteed5;
+                primogemInput = game.primogem;
+                primogemInputStr = String(game.primogem);
         });
 
         let saved = $state(false);
 
         function apply() {
+                // Parse primogem input safely (allow empty = 0)
+                const parsed = parseInt(primogemInputStr.replace(/[^\d]/g, ''), 10);
+                const primoAmount = Number.isFinite(parsed) ? parsed : 0;
                 game.setPity(pity5Input, pity4Input);
                 game.setGuaranteed5(guaranteed5Input);
+                game.setPrimogem(primoAmount);
+                primogemInput = primoAmount;
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
@@ -30,29 +39,43 @@
                 pity5Input = 0;
                 pity4Input = 0;
                 guaranteed5Input = false;
+                primogemInput = game.DEFAULT_PRIMOGEM;
+                primogemInputStr = String(game.DEFAULT_PRIMOGEM);
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
 
-        const PRESETS: { label: string; pity5: number; pity4: number; guaranteed5: boolean; desc: string }[] = [
-                { label: 'Fresh Account', pity5: 0,  pity4: 0,  guaranteed5: false, desc: 'Akun baru, 0 pity di semua' },
-                { label: 'Soft Pity Zone', pity5: 74, pity4: 5,  guaranteed5: false, desc: 'Tepat di soft pity 5★' },
-                { label: 'Near Hard Pity', pity5: 85, pity4: 9,  guaranteed5: false, desc: 'Dekat hard pity 90' },
-                { label: 'Guaranteed Featured', pity5: 0,  pity4: 0,  guaranteed5: true,  desc: '5★ berikutnya dijamin featured' }
+        const PRESETS: { label: string; pity5: number; pity4: number; guaranteed5: boolean; primogem: number; desc: string }[] = [
+                { label: 'Fresh Account',      pity5: 0,  pity4: 0,  guaranteed5: false, primogem: 16000, desc: 'Akun baru, 0 pity, 16k primo' },
+                { label: 'Soft Pity Zone',     pity5: 74, pity4: 5,  guaranteed5: false, primogem: 12800, desc: 'Tepat di soft pity 5★ (8× 10-pull worth)' },
+                { label: 'Near Hard Pity',     pity5: 85, pity4: 9,  guaranteed5: false, primogem: 1600,  desc: 'Dekat hard pity 90, 1× 10-pull ready' },
+                { label: 'Guaranteed Featured', pity5: 0, pity4: 0,  guaranteed5: true,  primogem: 16000, desc: '5★ berikutnya dijamin featured' }
         ];
 
         function applyPreset(p: typeof PRESETS[number]) {
                 pity5Input = p.pity5;
                 pity4Input = p.pity4;
                 guaranteed5Input = p.guaranteed5;
+                primogemInput = p.primogem;
+                primogemInputStr = String(p.primogem);
                 game.setPity(p.pity5, p.pity4);
                 game.setGuaranteed5(p.guaranteed5);
+                game.setPrimogem(p.primogem);
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
 
         let pity5Percent = $derived(Math.min((pity5Input / 90) * 100, 100));
         let pity4Percent = $derived(Math.min((pity4Input / 10) * 100, 100));
+
+        // Quick primogem top-up helpers (added to current input)
+        function addPrimo(amount: number) {
+                const current = parseInt(primogemInputStr.replace(/[^\d]/g, ''), 10) || 0;
+                primogemInputStr = String(current + amount);
+        }
+
+        // Live preview of parsed value for display under input
+        let parsedPrimo = $derived(parseInt(primogemInputStr.replace(/[^\d]/g, ''), 10) || 0);
 </script>
 
 <svelte:head>
@@ -65,7 +88,7 @@
         <section class="space-y-2">
                 <h1 class="font-heading text-3xl md:text-4xl font-bold text-[#F2E6D0]">Pity Setup</h1>
                 <p class="text-sm text-[#B8C1D3] max-w-2xl">
-                        Atur pity awal agar simulasi sesuai kondisi akun Genshin Impact aslimu. Pity disimpan otomatis di localStorage.
+                        Atur pity dan <span class="text-[#E6C77A] font-semibold">primogem</span> agar simulasi sesuai kondisi akun Genshin Impact aslimu. Semua disimpan otomatis di localStorage.
                 </p>
         </section>
 
@@ -82,7 +105,8 @@
                                                 <span class="font-heading text-sm font-semibold text-[#F2E6D0]">{p.label}</span>
                                                 <span class="text-[10px] font-mono text-[#E6C77A]">{p.pity5}/90 · {p.pity4}/10{p.guaranteed5 ? ' · GARANSI' : ''}</span>
                                         </div>
-                                        <div class="text-[11px] text-[#8E97AA]">{p.desc}</div>
+                                        <div class="text-[11px] text-[#8E97AA] mb-1.5">{p.desc}</div>
+                                        <div class="text-[10px] text-[#E6C77A] font-mono">★ {p.primogem.toLocaleString('en-US')} Primo</div>
                                 </button>
                         {/each}
                 </div>
@@ -132,6 +156,61 @@
                         />
                         <div class="h-1.5 bg-[#0B1020] rounded-full overflow-hidden border border-[#24314A]">
                                 <div class="h-full bg-gradient-to-r from-[#8D72C9] to-[#B495F0] rounded-full transition-all" style="width: {pity4Percent}%"></div>
+                        </div>
+                </div>
+
+                <!-- Primogem Manual Input -->
+                <div class="space-y-2 pt-2 border-t border-[#24314A]">
+                        <div class="flex justify-between items-center">
+                                <label for="primogem" class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Primogem</label>
+                                <span class="text-[10px] font-mono text-[#8E97AA]">
+                                        ≈ {Math.floor(parsedPrimo / 160)} wish ({Math.floor(parsedPrimo / 1600)}× 10-pull)
+                                </span>
+                        </div>
+                        <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#E6C77A] text-sm">★</span>
+                                        <input
+                                                id="primogem"
+                                                type="text"
+                                                inputmode="numeric"
+                                                pattern="[0-9]*"
+                                                bind:value={primogemInputStr}
+                                                placeholder="0"
+                                                class="w-full pl-8 pr-3 py-2.5 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] font-mono text-sm focus:outline-none focus:border-[#C9A45A]/60 focus:ring-1 focus:ring-[#C9A45A]/40"
+                                                oninput={(e) => {
+                                                        // Strip non-digits live
+                                                        const raw = e.currentTarget.value;
+                                                        const clean = raw.replace(/[^\d]/g, '');
+                                                        if (clean !== raw) e.currentTarget.value = clean;
+                                                        primogemInputStr = clean;
+                                                }}
+                                        />
+                                </div>
+                                <button
+                                        type="button"
+                                        onclick={() => addPrimo(1600)}
+                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                >
+                                        +1,600
+                                </button>
+                                <button
+                                        type="button"
+                                        onclick={() => addPrimo(8000)}
+                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                >
+                                        +8,000
+                                </button>
+                                <button
+                                        type="button"
+                                        onclick={() => addPrimo(16000)}
+                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                >
+                                        +16,000
+                                </button>
+                        </div>
+                        <div class="text-[10px] text-[#8E97AA]">
+                                Ketik jumlah primogem akunmu secara manual, atau pakai tombol quick-add. Klik <span class="text-[#E6C77A] font-semibold">Apply</span> untuk menyimpan.
                         </div>
                 </div>
 
