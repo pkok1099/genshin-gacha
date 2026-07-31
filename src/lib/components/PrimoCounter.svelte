@@ -1,6 +1,7 @@
 <script lang="ts">
-        import { fly, fade } from 'svelte/transition';
+        import { fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
+        import { clickOutside } from '$lib/actions/clickOutside';
 
         let { amount, onTopUp }: {
                 amount: number;
@@ -21,7 +22,7 @@
         }
 </script>
 
-<div class="relative">
+<div class="relative" use:clickOutside={() => showMenu = false}>
         <!-- Primo pill -->
         <button
                 class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A45A]/40 bg-gradient-to-r from-[#1A2337] to-[#24314A] hover:from-[#24314A] hover:to-[#2A3856] transition-all shadow-sm"
@@ -43,15 +44,6 @@
 
         <!-- Top-up menu -->
         {#if showMenu}
-                <!-- Click-outside catcher -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <div
-                        class="fixed inset-0 z-40"
-                        onclick={() => showMenu = false}
-                        transition:fade={{ duration: 100 }}
-                ></div>
-
                 <div
                         class="absolute right-0 top-full mt-2 z-50 w-44 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden"
                         transition:fly={{ y: -6, duration: 150, easing: cubicOut }}
