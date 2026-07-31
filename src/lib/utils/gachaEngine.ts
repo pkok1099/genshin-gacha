@@ -73,7 +73,10 @@ const STANDARD_5STAR: Standard5StarEntry[] = [
     { id: 'dehya', name: 'Dehya', element: 'Pyro' }
 ];
 
-/** 3★ weapons pool. Per spec. */
+/** 3★ weapons pool. Per spec, slugs verified against genshin.jmp.blue.
+ *  Note: 'sharpshooters-oath' and 'seasoned-hunters-bow' removed because
+ *  jmp.blue returns 404 for them.
+ */
 const WEAPONS_3STAR: { id: string; name: string }[] = [
     { id: 'cool-steel', name: 'Cool Steel' },
     { id: 'skyrider-sword', name: 'Skyrider Sword' },
@@ -83,8 +86,6 @@ const WEAPONS_3STAR: { id: string; name: string }[] = [
     { id: 'thrilling-tales-of-dragon-slayers', name: 'Thrilling Tales' },
     { id: 'emerald-orb', name: 'Emerald Orb' },
     { id: 'raven-bow', name: 'Raven Bow' },
-    { id: 'sharpshooters-oath', name: "Sharpshooter's Oath" },
-    { id: 'seasoned-hunters-bow', name: "Seasoned Hunter's Bow" },
     { id: 'white-tassel', name: 'White Tassel' },
     { id: 'black-tassel', name: 'Black Tassel' },
     { id: 'debate-club', name: 'Debate Club' },
