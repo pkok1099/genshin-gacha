@@ -1,6 +1,8 @@
 <script lang="ts">
         import '../app.css';
         import { page } from '$app/state';
+        import { fly, fade } from 'svelte/transition';
+        import { cubicOut } from 'svelte/easing';
         import { getGameState } from '$lib/stores/gameState.svelte';
         import PrimoCounter from '$lib/components/PrimoCounter.svelte';
         import { clickOutside } from '$lib/actions/clickOutside';
@@ -92,7 +94,10 @@
 
                                         {#if rngDropdownOpen}
                                                 <!-- Dropdown menu -->
-                                                <div class="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden animate-dropdown">
+                                                <div
+                                                        class="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden"
+                                                        transition:fly={{ y: -8, duration: 180, easing: cubicOut }}
+                                                >
                                                         <!-- Overview link -->
                                                         <a
                                                                 href="/rng"
@@ -149,7 +154,11 @@
 
                 <!-- Mobile Nav -->
                 {#if mobileOpen}
-                        <nav class="md:hidden pb-3 flex flex-col gap-1 animate-slide-down" use:clickOutside={() => mobileOpen = false}>
+                        <nav
+                                class="md:hidden pb-3 flex flex-col gap-1"
+                                use:clickOutside={() => mobileOpen = false}
+                                transition:fly={{ y: -12, duration: 200, easing: cubicOut }}
+                        >
                                 {#each navItems as item}
                                         <a
                                                 href={item.href}
@@ -214,9 +223,11 @@
 </header>
 
 <!-- ═══ Page Content ═══ -->
-<main class="animate-page">
-        {@render children()}
-</main>
+{#key page.url.pathname}
+        <main transition:fade={{ duration: 200 }}>
+                {@render children()}
+        </main>
+{/key}
 
 <!-- ═══ Footer ═══ -->
 <footer class="border-t border-[#C9A45A]/15 mt-16 py-8 px-4">

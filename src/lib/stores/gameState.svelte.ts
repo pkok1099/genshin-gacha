@@ -144,12 +144,33 @@ function createInitialSimState(): SimState {
 
 let simState: SimState = $state(loadState());
 
-// Persist on every change
+// Persist on every change — DEBOUNCED to avoid localStorage write on every keystroke
+// (JSON.stringify on every $effect fire was the main perf bottleneck)
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
 $effect.root(() => {
     $effect(() => {
-        // Deep-watch wishHistory + primitives by serializing
-        const snapshot = JSON.stringify(simState);
-        persistState(JSON.parse(snapshot) as SimState);
+        // Touch the reactive deps we want to track (granular, not deep-watch)
+        void simState.primogem;
+        void simState.pity5;
+        void simState.pity4;
+        void simState.guaranteed5;
+        void simState.guaranteed4;
+        void simState.totalWishes;
+        void simState.selectedBannerId;
+        void simState.pityLock5;
+        void simState.pityLock4;
+        void simState.wishMode;
+        void simState.novicePullsUsed;
+        void simState.noviceFirstTenUsed;
+        void simState.wishHistory.length;
+
+        // Debounce: collapse rapid successive mutations into one localStorage write
+        if (persistTimer) clearTimeout(persistTimer);
+        persistTimer = setTimeout(() => {
+            persistState(simState);
+            persistTimer = null;
+        }, 150);
     });
 });
 

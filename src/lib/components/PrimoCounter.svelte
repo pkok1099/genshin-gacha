@@ -45,8 +45,8 @@
         <!-- Top-up menu -->
         {#if showMenu}
                 <div
-                        class="absolute right-0 top-full mt-2 z-50 w-44 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden animate-dropdown"
-                        transition:fly={{ y: -6, duration: 150, easing: cubicOut }}
+                        class="absolute right-0 top-full mt-2 z-50 w-44 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden"
+                        transition:fly={{ y: -8, duration: 180, easing: cubicOut }}
                 >
                         <div class="px-3 py-2 text-[10px] uppercase tracking-wider text-[#8E97AA] border-b border-[#24314A]">
                                 Simulation Top-Up

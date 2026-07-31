@@ -64,8 +64,8 @@
         {#if isOpen}
                         <!-- Options dropdown -->
                 <div
-                        class="absolute z-50 mt-1 w-full rounded-md border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden max-h-60 overflow-y-auto animate-dropdown-left"
-                        transition:fly={{ y: -6, duration: 150, easing: cubicOut }}
+                        class="absolute z-50 mt-1 w-full rounded-md border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden max-h-60 overflow-y-auto"
+                        transition:fly={{ y: -8, duration: 180, easing: cubicOut }}
                 >
                         {#each options as opt}
                                 <button

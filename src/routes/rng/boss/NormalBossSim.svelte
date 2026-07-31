@@ -1,4 +1,5 @@
 <script lang="ts">
+        import { onMount } from 'svelte';
         import { fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
         import ThemedSelect from '$lib/components/ThemedSelect.svelte';
@@ -19,9 +20,8 @@
                 results = simulateNormalBossRuns(runs, selectedBossId);
         }
 
-        $effect(() => {
-                void selectedBossId;
-                void runs;
+        // Run once on mount — user clicks Simulate to re-run (avoids $effect over-fire)
+        onMount(() => {
                 doSim();
         });
 
@@ -65,7 +65,7 @@
 
                 <button
                         onclick={doSim}
-			class="btn-press w-full px-4 py-3 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_25px_rgba(230,199,122,0.45)]"
+                        class="btn-press w-full px-4 py-3 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_25px_rgba(230,199,122,0.45)]"
                 >
                         ✺ Simulate {runs} Claim{runs > 1 ? 's' : ''}
                 </button>

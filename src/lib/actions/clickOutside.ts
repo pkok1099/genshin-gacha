@@ -4,45 +4,32 @@
 // Usage:
 //   <div use:clickOutside={() => isOpen = false}>...</div>
 //
-// Also closes on ESC key press and touchend outside (mobile-friendly).
+// Uses mousedown (not click) to fire BEFORE the click event completes,
+// avoiding the need for setTimeout. Also handles Escape key.
 
 export function clickOutside(node: HTMLElement, callback: () => void): { destroy: () => void } {
-    let active = true;
-
-    function handleClick(event: MouseEvent): void {
-        if (!active) return;
-        if (node && !node.contains(event.target as Node) && !event.defaultPrevented) {
-            callback();
-        }
-    }
-
-    function handleTouch(event: TouchEvent): void {
-        if (!active) return;
-        if (node && !node.contains(event.target as Node) && !event.defaultPrevented) {
+    function handlePointerDown(event: MouseEvent | TouchEvent): void {
+        const target = event.target as Node;
+        if (node && !node.contains(target)) {
             callback();
         }
     }
 
     function handleKeydown(event: KeyboardEvent): void {
-        if (!active) return;
         if (event.key === 'Escape') {
             callback();
         }
     }
 
-    // Use capture phase to catch events before they reach inner elements
-    // Delay slightly so the click that opened the menu doesn't immediately close it
-    setTimeout(() => {
-        document.addEventListener('click', handleClick, true);
-        document.addEventListener('touchend', handleTouch, true);
-        document.addEventListener('keydown', handleKeydown, true);
-    }, 0);
+    // mousedown fires before click completes — no setTimeout needed
+    document.addEventListener('mousedown', handlePointerDown, true);
+    document.addEventListener('touchstart', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeydown, true);
 
     return {
         destroy() {
-            active = false;
-            document.removeEventListener('click', handleClick, true);
-            document.removeEventListener('touchend', handleTouch, true);
+            document.removeEventListener('mousedown', handlePointerDown, true);
+            document.removeEventListener('touchstart', handlePointerDown, true);
             document.removeEventListener('keydown', handleKeydown, true);
         }
     };
