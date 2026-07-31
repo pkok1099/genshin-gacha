@@ -85,13 +85,14 @@ function updatePools() {
         if (!currentBanner) return;
 
         const f5 = featured5Star
-                ? { id: slugify(featured5Star.name), name: featured5Star.name, element: featured5Star.element }
+                ? { id: slugify(featured5Star.name), name: featured5Star.name, element: featured5Star.element, bannerIconUrl: featured5Star.icon }
                 : null;
 
         const f4 = featured4Stars.map((c) => ({
                 id: slugify(c.name),
                 name: c.name,
-                element: c.element
+                element: c.element,
+                bannerIconUrl: c.icon
         }));
 
         const s4 = STANDARD_4STAR_SLUGS.map((slug) => ({

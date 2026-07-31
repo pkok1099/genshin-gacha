@@ -81,7 +81,15 @@
                                         alt={result.name}
                                         class="w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
                                         onload={() => imgLoaded = true}
-                                        onerror={() => imgLoaded = false}
+                                        onerror={(e) => {
+                                                const img = e.target as HTMLImageElement;
+                                                if (result.bannerIconUrl && img.src !== result.bannerIconUrl) {
+                                                        img.src = result.bannerIconUrl;
+                                                } else {
+                                                        img.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1e293b" width="100" height="100"/><text fill="#94a3b8" font-size="14" x="50" y="55" text-anchor="middle">★' + result.rarity + '</text></svg>');
+                                                        imgLoaded = true;
+                                                }
+                                        }}
                                 />
                         </div>
 
