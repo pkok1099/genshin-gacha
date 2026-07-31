@@ -52,7 +52,7 @@
 				{#each group.pages as page (page.href)}
 					<a
 						href={page.href}
-						class="group block p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all hover:shadow-[0_0_20px_rgba(201,164,90,0.2)]"
+						class="card-hover group block p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all hover:shadow-[0_0_24px_rgba(201,164,90,0.3)] animate-scale-in"
 						in:fade
 					>
 						<div class="flex items-center gap-3 mb-2">

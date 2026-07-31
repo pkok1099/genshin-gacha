@@ -25,7 +25,7 @@
 <div class="relative" use:clickOutside={() => showMenu = false}>
         <!-- Primo pill -->
         <button
-                class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A45A]/40 bg-gradient-to-r from-[#1A2337] to-[#24314A] hover:from-[#24314A] hover:to-[#2A3856] transition-all shadow-sm"
+                class="btn-press flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A45A]/40 bg-gradient-to-r from-[#1A2337] to-[#24314A] hover:from-[#24314A] hover:to-[#2A3856] transition-all shadow-sm"
                 onclick={() => showMenu = !showMenu}
                 aria-label="Primogem balance"
         >
@@ -45,7 +45,7 @@
         <!-- Top-up menu -->
         {#if showMenu}
                 <div
-                        class="absolute right-0 top-full mt-2 z-50 w-44 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden"
+                        class="absolute right-0 top-full mt-2 z-50 w-44 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden animate-dropdown"
                         transition:fly={{ y: -6, duration: 150, easing: cubicOut }}
                 >
                         <div class="px-3 py-2 text-[10px] uppercase tracking-wider text-[#8E97AA] border-b border-[#24314A]">
@@ -53,7 +53,7 @@
                         </div>
                         {#each TOP_UP_OPTIONS as opt}
                                 <button
-                                        class="w-full text-left px-3 py-2 hover:bg-[#24314A] transition-colors flex items-center justify-between text-sm"
+                                        class="btn-press w-full text-left px-3 py-2 hover:bg-[#24314A] transition-colors flex items-center justify-between text-sm"
                                         onclick={() => handleTopUp(opt.amount)}
                                 >
                                         <span class="text-[#F2E6D0]">{opt.label}</span>

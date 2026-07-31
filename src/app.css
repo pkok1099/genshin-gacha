@@ -339,3 +339,150 @@ body.modal-open {
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Animation Utilities
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dropdown / Menu entrance ── */
+@keyframes dropdown-enter {
+        from {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.96);
+        }
+        to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+        }
+}
+
+.animate-dropdown {
+        animation: dropdown-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: top right;
+}
+
+.animate-dropdown-left {
+        animation: dropdown-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: top left;
+}
+
+/* ── Scale-in for cards & panels ── */
+@keyframes scale-in {
+        from {
+                opacity: 0;
+                transform: scale(0.95);
+        }
+        to {
+                opacity: 1;
+                transform: scale(1);
+        }
+}
+
+.animate-scale-in {
+        animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Slide up (for toasts, banners) ── */
+@keyframes slide-up {
+        from {
+                opacity: 0;
+                transform: translateY(16px);
+        }
+        to {
+                opacity: 1;
+                transform: translateY(0);
+        }
+}
+
+.animate-slide-up {
+        animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Slide down (for nav menus) ── */
+@keyframes slide-down {
+        from {
+                opacity: 0;
+                transform: translateY(-12px);
+                max-height: 0;
+        }
+        to {
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 500px;
+        }
+}
+
+.animate-slide-down {
+        animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+}
+
+/* ── Button press feedback ── */
+.btn-press {
+        transition: transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-press:active {
+        transform: scale(0.96);
+}
+
+/* ── Card hover lift ── */
+.card-hover {
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-hover:hover {
+        transform: translateY(-4px);
+}
+
+/* ── Page transition ── */
+@keyframes page-fade-in {
+        from {
+                opacity: 0;
+                transform: translateY(6px);
+        }
+        to {
+                opacity: 1;
+                transform: translateY(0);
+        }
+}
+
+.animate-page {
+        animation: page-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Glow pulse for important elements ── */
+@keyframes glow-pulse {
+        0%, 100% { box-shadow: 0 0 12px rgba(230, 199, 122, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(230, 199, 122, 0.6); }
+}
+
+.animate-glow {
+        animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ── Shimmer for loading/skeleton ── */
+@keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+        background: linear-gradient(
+                90deg,
+                #1A2337 0%,
+                #24314A 50%,
+                #1A2337 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+}
+
+/* ── Reduced motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+        }
+}

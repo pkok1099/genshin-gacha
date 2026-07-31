@@ -225,14 +225,14 @@
                 <div class="grid grid-cols-2 gap-3">
                         <button
                                 onclick={doSingle}
-                                class="px-4 py-3 rounded-md border border-[#C9A45A]/30 bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold uppercase text-sm tracking-wider transition-all"
+			class="btn-press px-4 py-3 rounded-md border border-[#C9A45A]/30 bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold uppercase text-sm tracking-wider transition-all"
                         >
                                 ✦ 1× Wish
                                 <span class="block text-[10px] text-[#8E97AA] font-mono">{COST_SINGLE} Primo</span>
                         </button>
                         <button
                                 onclick={doTen}
-                                class="px-4 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] hover:shadow-[0_0_25px_rgba(230,199,122,0.4)] text-[#0B1020] font-heading font-bold uppercase text-sm tracking-wider transition-all"
+			class="btn-press px-4 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] hover:shadow-[0_0_25px_rgba(230,199,122,0.4)] text-[#0B1020] font-heading font-bold uppercase text-sm tracking-wider transition-all"
                         >
                                 ✦✦ 10× Wish
                                 <span class="block text-[10px] text-[#0B1020]/70 font-mono font-semibold">{COST_TEN} Primo</span>

@@ -118,14 +118,14 @@
                         <button
                                 onclick={copyManual}
                                 disabled={!manualCode.trim()}
-                                class="px-3 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#F2E6D0] text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                class="btn-press px-3 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#F2E6D0] text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                                 {copiedManual ? '✓' : 'Copy'}
                         </button>
                         <button
                                 onclick={submitManual}
                                 disabled={!manualCode.trim()}
-                                class="px-4 py-2 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] text-sm font-semibold transition-all hover:shadow-[0_0_20px_rgba(230,199,122,0.4)] disabled:opacity-40 disabled:cursor-not-allowed"
+                                class="btn-press px-4 py-2 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] text-sm font-semibold transition-all hover:shadow-[0_0_20px_rgba(230,199,122,0.4)] disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                                 Redeem
                         </button>

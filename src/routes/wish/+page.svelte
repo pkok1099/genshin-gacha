@@ -273,7 +273,7 @@
 							<button
 								onclick={handleSinglePull}
 								disabled={!canSingle}
-								class="relative group bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold py-4 px-4 rounded-lg border border-[#C9A45A]/30 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#C9A45A]/60 hover:shadow-[0_0_20px_rgba(201,164,90,0.25)]"
+								class="btn-press relative group bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold py-4 px-4 rounded-lg border border-[#C9A45A]/30 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#C9A45A]/60 hover:shadow-[0_0_20px_rgba(201,164,90,0.25)]"
 							>
 								<span class="text-base tracking-wider uppercase">✦ 1× Wish</span>
 								<span class="text-[10px] text-[#8E97AA] font-mono">{game.COST_SINGLE} Primo</span>
@@ -281,7 +281,7 @@
 							<button
 								onclick={handleTenPull}
 								disabled={!canTen}
-								class="relative group bg-gradient-to-br from-[#C9A45A] to-[#8D72C9] hover:from-[#E6C77A] hover:to-[#B495F0] text-[#0B1020] font-heading font-bold py-4 px-4 rounded-lg border border-[#E6C77A]/50 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_30px_rgba(230,199,122,0.45)]"
+								class="btn-press relative group bg-gradient-to-br from-[#C9A45A] to-[#8D72C9] hover:from-[#E6C77A] hover:to-[#B495F0] text-[#0B1020] font-heading font-bold py-4 px-4 rounded-lg border border-[#E6C77A]/50 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_30px_rgba(230,199,122,0.45)]"
 							>
 								<span class="text-base tracking-wider uppercase">✦✦ 10× Wish</span>
 								<span class="text-[10px] text-[#0B1020]/70 font-mono font-semibold">{tenPullCost.toLocaleString('en-US')} Primo</span>

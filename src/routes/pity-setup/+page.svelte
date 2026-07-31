@@ -110,7 +110,7 @@
                         {#each PRESETS as p}
                                 <button
                                         onclick={() => applyPreset(p)}
-                                        class="text-left p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all"
+                                        class="btn-press card-hover text-left p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all"
                                 >
                                         <div class="flex items-center justify-between mb-1">
                                                 <span class="font-heading text-sm font-semibold text-[#F2E6D0]">{p.label}</span>
@@ -186,21 +186,21 @@
                                 <button
                                         type="button"
                                         onclick={() => addPrimo(1600)}
-                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                        class="btn-press px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
                                 >
                                         +1,600
                                 </button>
                                 <button
                                         type="button"
                                         onclick={() => addPrimo(8000)}
-                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                        class="btn-press px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
                                 >
                                         +8,000
                                 </button>
                                 <button
                                         type="button"
                                         onclick={() => addPrimo(16000)}
-                                        class="px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
+                                        class="btn-press px-3 py-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-mono transition-all"
                                 >
                                         +16,000
                                 </button>
@@ -280,13 +280,13 @@
                 <div class="flex gap-2 pt-2 border-t border-[#24314A]">
                         <button
                                 onclick={apply}
-                                class="flex-1 px-4 py-2.5 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_25px_rgba(230,199,122,0.45)]"
+                                class="btn-press flex-1 px-4 py-2.5 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_25px_rgba(230,199,122,0.45)]"
                         >
                                 Apply
                         </button>
                         <button
                                 onclick={resetAll}
-                                class="px-4 py-2.5 rounded-md border border-[#8B3A3A]/50 bg-[#8B3A3A]/15 text-[#E8745A] text-sm font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
+                                class="btn-press px-4 py-2.5 rounded-md border border-[#8B3A3A]/50 bg-[#8B3A3A]/15 text-[#E8745A] text-sm font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
                         >
                                 Reset All
                         </button>

@@ -62,7 +62,7 @@
                                 {#each navItems as item}
                                         <a
                                                 href={item.href}
-                                                class="px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                                                class="btn-press px-3 py-1.5 rounded-md text-sm font-medium transition-all
                                                         {isActive(item.href)
                                                                 ? 'text-[#E6C77A] bg-[#C9A45A]/10 border border-[#C9A45A]/30'
                                                                 : 'text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 border border-transparent'}"
@@ -76,7 +76,7 @@
                                 <div class="relative" use:clickOutside={() => rngDropdownOpen = false}>
                                         <button
                                                 onclick={() => rngDropdownOpen = !rngDropdownOpen}
-                                                class="px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1
+                                                class="btn-press px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1
                                                         {isRngActive
                                                                 ? 'text-[#E6C77A] bg-[#C9A45A]/10 border border-[#C9A45A]/30'
                                                                 : 'text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 border border-transparent'}"
@@ -92,7 +92,7 @@
 
                                         {#if rngDropdownOpen}
                                                 <!-- Dropdown menu -->
-                                                <div class="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden">
+                                                <div class="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden animate-dropdown">
                                                         <!-- Overview link -->
                                                         <a
                                                                 href="/rng"
@@ -130,7 +130,7 @@
 
                                 <!-- Mobile menu button -->
                                 <button
-                                        class="md:hidden p-2 rounded-md text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 transition-colors"
+                                        class="btn-press md:hidden p-2 rounded-md text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 transition-colors"
                                         onclick={() => mobileOpen = !mobileOpen}
                                         aria-label="Toggle menu"
                                 >
@@ -149,12 +149,12 @@
 
                 <!-- Mobile Nav -->
                 {#if mobileOpen}
-                        <nav class="md:hidden pb-3 flex flex-col gap-1" use:clickOutside={() => mobileOpen = false}>
+                        <nav class="md:hidden pb-3 flex flex-col gap-1 animate-slide-down" use:clickOutside={() => mobileOpen = false}>
                                 {#each navItems as item}
                                         <a
                                                 href={item.href}
                                                 onclick={() => mobileOpen = false}
-                                                class="px-3 py-2 rounded-md text-sm font-medium transition-all
+                                                class="btn-press px-3 py-2 rounded-md text-sm font-medium transition-all
                                                         {isActive(item.href)
                                                                 ? 'text-[#E6C77A] bg-[#C9A45A]/10 border border-[#C9A45A]/30'
                                                                 : 'text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 border border-transparent'}"
@@ -167,7 +167,7 @@
                                 <!-- RNG Sims collapsible section -->
                                 <button
                                         onclick={() => mobileRngOpen = !mobileRngOpen}
-                                        class="px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center justify-between
+                                        class="btn-press px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center justify-between
                                                 {isRngActive
                                                         ? 'text-[#E6C77A] bg-[#C9A45A]/10 border border-[#C9A45A]/30'
                                                         : 'text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 border border-transparent'}"
@@ -214,7 +214,7 @@
 </header>
 
 <!-- ═══ Page Content ═══ -->
-<main class="page-enter">
+<main class="animate-page">
         {@render children()}
 </main>
 

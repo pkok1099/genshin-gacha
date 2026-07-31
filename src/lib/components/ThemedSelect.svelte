@@ -51,7 +51,7 @@
                 {id}
                 {disabled}
                 onclick={toggle}
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] text-sm transition-all focus:outline-none focus:border-[#C9A45A]/60 focus:ring-1 focus:ring-[#C9A45A]/40 hover:border-[#C9A45A]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="btn-press w-full flex items-center justify-between px-3 py-2.5 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] text-sm transition-all focus:outline-none focus:border-[#C9A45A]/60 focus:ring-1 focus:ring-[#C9A45A]/40 hover:border-[#C9A45A]/40 disabled:opacity-50 disabled:cursor-not-allowed"
         >
                 <span class="{selectedOption ? 'text-[#F2E6D0]' : 'text-[#5E6478]'} truncate">
                         {selectedOption?.label ?? placeholder}
@@ -64,14 +64,14 @@
         {#if isOpen}
                         <!-- Options dropdown -->
                 <div
-                        class="absolute z-50 mt-1 w-full rounded-md border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden max-h-60 overflow-y-auto"
+                        class="absolute z-50 mt-1 w-full rounded-md border border-[#C9A45A]/30 bg-[#141C2F] shadow-xl overflow-hidden max-h-60 overflow-y-auto animate-dropdown-left"
                         transition:fly={{ y: -6, duration: 150, easing: cubicOut }}
                 >
                         {#each options as opt}
                                 <button
                                         type="button"
                                         onclick={() => selectOption(opt.value)}
-                                        class="w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between {opt.value === value ? 'bg-[#C9A45A]/15 text-[#E6C77A]' : 'text-[#B8C1D3] hover:bg-[#24314A] hover:text-[#F2E6D0]'}"
+                                        class="btn-press w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between {opt.value === value ? 'bg-[#C9A45A]/15 text-[#E6C77A]' : 'text-[#B8C1D3] hover:bg-[#24314A] hover:text-[#F2E6D0]'}"
                                 >
                                         <span class="truncate">{opt.label}</span>
                                         {#if opt.value === value}

@@ -42,7 +42,7 @@
                         </a>
                         <button
                                 onclick={() => confirmReset = true}
-                                class="px-4 py-2 rounded-md border border-[#8B3A3A]/40 bg-[#8B3A3A]/15 text-[#E8745A] text-xs font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
+                                class="btn-press px-4 py-2 rounded-md border border-[#8B3A3A]/40 bg-[#8B3A3A]/15 text-[#E8745A] text-xs font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
                         >
                                 Reset History
                         </button>
