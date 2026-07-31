@@ -1,6 +1,7 @@
 <script lang="ts">
         import { fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
+        import ThemedSelect from '$lib/components/ThemedSelect.svelte';
         import {
                 simulateNormalBossRuns,
                 getAvailableBosses,
@@ -35,16 +36,12 @@
 
                 <!-- Boss Selector -->
                 <div class="space-y-2">
-                        <label for="boss" class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Boss</label>
-                        <select
-                                id="boss"
-                                bind:value={selectedBossId}
-                                class="w-full px-3 py-2 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] text-sm focus:outline-none focus:border-[#C9A45A]/60"
-                        >
-                                {#each BOSSES as b}
-                                        <option value={b.id}>{b.name} ({b.element})</option>
-                                {/each}
-                        </select>
+                        <ThemedSelect
+                                label="Boss"
+                                value={selectedBossId}
+                                options={BOSSES.map((b) => ({ value: b.id, label: `${b.name} (${b.element})` }))}
+                                onchange={(v) => { selectedBossId = v; }}
+                        />
                         <div class="text-[11px] text-[#8E97AA] mt-1">
                                 Drops: <span class="text-[#E6C77A]">{selectedBoss.material}</span> + ascension gems + artifacts (40 resin/claim, WL8)
                         </div>

@@ -2,6 +2,8 @@
         import { getGameState } from '$lib/stores/gameState.svelte';
         import { fly, fade } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
+        import ThemedRange from '$lib/components/ThemedRange.svelte';
+        import ThemedInput from '$lib/components/ThemedInput.svelte';
 
         const game = getGameState();
 
@@ -127,21 +129,15 @@
 
                 <!-- 5★ Pity -->
                 <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                                <label for="pity5" class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">5★ Pity</label>
-                                <span class="text-xs font-mono text-[#F2E6D0] tabular-nums">{pity5Input} / 90</span>
-                        </div>
-                        <input
+                        <ThemedRange
                                 id="pity5"
-                                type="range"
-                                min="0"
-                                max="89"
-                                bind:value={pity5Input}
-                                class="w-full accent-[#C9A45A]"
+                                label="5★ Pity"
+                                value={pity5Input}
+                                min={0}
+                                max={89}
+                                accent="gold"
+                                oninput={(e) => { pity5Input = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
                         />
-                        <div class="h-1.5 bg-[#0B1020] rounded-full overflow-hidden border border-[#24314A]">
-                                <div class="h-full bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] rounded-full transition-all" style="width: {pity5Percent}%"></div>
-                        </div>
                         <div class="flex justify-between text-[10px] text-[#8E97AA]">
                                 <span>0 (fresh)</span>
                                 <span class="text-[#E0B25A]">74 (soft pity)</span>
@@ -151,21 +147,15 @@
 
                 <!-- 4★ Pity -->
                 <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                                <label for="pity4" class="text-xs font-bold text-[#B495F0] uppercase tracking-wider">4★ Pity</label>
-                                <span class="text-xs font-mono text-[#F2E6D0] tabular-nums">{pity4Input} / 10</span>
-                        </div>
-                        <input
+                        <ThemedRange
                                 id="pity4"
-                                type="range"
-                                min="0"
-                                max="9"
-                                bind:value={pity4Input}
-                                class="w-full accent-[#8D72C9]"
+                                label="4★ Pity"
+                                value={pity4Input}
+                                min={0}
+                                max={9}
+                                accent="purple"
+                                oninput={(e) => { pity4Input = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
                         />
-                        <div class="h-1.5 bg-[#0B1020] rounded-full overflow-hidden border border-[#24314A]">
-                                <div class="h-full bg-gradient-to-r from-[#8D72C9] to-[#B495F0] rounded-full transition-all" style="width: {pity4Percent}%"></div>
-                        </div>
                 </div>
 
                 <!-- Primogem Manual Input -->
@@ -177,21 +167,18 @@
                                 </span>
                         </div>
                         <div class="flex gap-2">
-                                <div class="relative flex-1">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#E6C77A] text-sm">★</span>
-                                        <input
+                                <div class="flex-1">
+                                        <ThemedInput
                                                 id="primogem"
-                                                type="text"
+                                                value={primogemInputStr}
+                                                placeholder="0"
                                                 inputmode="numeric"
                                                 pattern="[0-9]*"
-                                                bind:value={primogemInputStr}
-                                                placeholder="0"
-                                                class="w-full pl-8 pr-3 py-2.5 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] font-mono text-sm focus:outline-none focus:border-[#C9A45A]/60 focus:ring-1 focus:ring-[#C9A45A]/40"
+                                                prefix="★"
                                                 oninput={(e) => {
-                                                        // Strip non-digits live
-                                                        const raw = e.currentTarget.value;
+                                                        const raw = (e.currentTarget as HTMLInputElement).value;
                                                         const clean = raw.replace(/[^\d]/g, '');
-                                                        if (clean !== raw) e.currentTarget.value = clean;
+                                                        if (clean !== raw) (e.currentTarget as HTMLInputElement).value = clean;
                                                         primogemInputStr = clean;
                                                 }}
                                         />

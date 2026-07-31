@@ -1,6 +1,7 @@
 <script lang="ts">
         import { fade, fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
+        import ThemedSelect from '$lib/components/ThemedSelect.svelte';
         import {
                 rollArtifact,
                 formatValue,
@@ -89,7 +90,7 @@
                 <!-- Slot -->
                 <div class="space-y-2">
                         <!-- svelte-ignore a11y_label_has_associated_control -->
-			<label class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Slot</label>
+                        <label class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Slot</label>
                         <div class="grid grid-cols-5 gap-1">
                                 {#each SLOTS as s}
                                         <button
@@ -106,7 +107,7 @@
                 <!-- Rarity -->
                 <div class="space-y-2">
                         <!-- svelte-ignore a11y_label_has_associated_control -->
-			<label class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Rarity</label>
+                        <label class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Rarity</label>
                         <div class="grid grid-cols-2 gap-2">
                                 <button
                                         onclick={() => rarity = 5}
@@ -125,17 +126,15 @@
 
                 <!-- Main Stat -->
                 <div class="space-y-2">
-                        <!-- svelte-ignore a11y_label_has_associated_control -->
-			<label class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Main Stat</label>
-                        <select
-                                bind:value={mainStat}
-                                class="w-full px-3 py-2 rounded-md bg-[#0B1020] border border-[#24314A] text-[#F2E6D0] text-sm focus:outline-none focus:border-[#C9A45A]/60"
-                        >
-                                <option value="auto">Auto (Random)</option>
-                                {#each availableMainStats as s}
-                                        <option value={s.key}>{s.label}</option>
-                                {/each}
-                        </select>
+                        <ThemedSelect
+                                label="Main Stat"
+                                value={mainStat}
+                                options={[
+                                        { value: 'auto', label: 'Auto (Random)' },
+                                        ...availableMainStats.map((s) => ({ value: s.key, label: s.label }))
+                                ]}
+                                onchange={(v) => { mainStat = v as StatKey | 'auto'; }}
+                        />
                 </div>
 
                 <!-- Force 4 initial substats -->
