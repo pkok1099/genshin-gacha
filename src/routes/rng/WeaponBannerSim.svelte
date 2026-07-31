@@ -1,4 +1,5 @@
 <script lang="ts">
+        import { onMount } from 'svelte';
         import { fade, fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
         import {
@@ -11,20 +12,10 @@
                 type WeaponPullResult,
                 type WeaponEntry
         } from '$lib/utils/weaponBannerEngine';
+        import { getBannerStore } from '$lib/stores/bannerStore.svelte';
+        import { slugifyName } from '$lib/services/characterApi';
 
-        // Featured 5★ weapons (slugs verified against genshin.jmp.blue)
-        const FEATURED_5STAR: WeaponEntry[] = [
-                { id: 'uraku-misugiri', name: 'Uraku Misugiri', rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/uraku-misugiri/icon' },
-                { id: 'crane-s-echoing-call', name: "Crane's Echoing Call", rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/crane-s-echoing-call/icon' }
-        ];
-
-        const FEATURED_4STAR: WeaponEntry[] = [
-                { id: 'sacrificial-sword', name: 'Sacrificial Sword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-sword/icon' },
-                { id: 'sacrificial-greatsword', name: 'Sacrificial Greatsword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-greatsword/icon' },
-                { id: 'dragon-s-bane', name: "Dragon's Bane", rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/dragon-s-bane/icon' },
-                { id: 'rainslasher', name: 'Rainslasher', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/rainslasher/icon' },
-                { id: 'eye-of-perception', name: 'Eye of Perception', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/eye-of-perception/icon' }
-        ];
+        const banners = getBannerStore();
 
         let bannerState: WeaponBannerState = $state(createInitialWeaponState());
         let chosenPathIdx: 0 | 1 = $state(0);
@@ -35,18 +26,66 @@
         const COST_SINGLE = 160;
         const COST_TEN = 1600;
 
-        // Init pools on mount
+        onMount(() => {
+                if (banners.banners.length === 0 && !banners.isLoading) {
+                        banners.fetchBanners();
+                }
+        });
+
+        // Build featured 5★ weapons from API
+        let featured5StarWeapons = $derived<WeaponEntry[]>(
+                banners.featured5StarWeapons.map((w) => ({
+                        id: slugifyName(w.name),
+                        name: w.name,
+                        rarity: 5 as const,
+                        iconUrl: `https://genshin.jmp.blue/weapons/${slugifyName(w.name)}/icon`,
+                        fallbackIcon: w.icon
+                }))
+        );
+
+        let featured4StarWeapons = $derived<WeaponEntry[]>(
+                banners.featured4StarWeapons.map((w) => ({
+                        id: slugifyName(w.name),
+                        name: w.name,
+                        rarity: 4 as const,
+                        iconUrl: `https://genshin.jmp.blue/weapons/${slugifyName(w.name)}/icon`,
+                        fallbackIcon: w.icon
+                }))
+        );
+
+        let hasApiData = $derived(featured5StarWeapons.length >= 2);
+
+        // Fallback hardcoded pool if API fails
+        const FALLBACK_5STAR: WeaponEntry[] = [
+                { id: 'uraku-misugiri', name: 'Uraku Misugiri', rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/uraku-misugiri/icon' },
+                { id: 'crane-s-echoing-call', name: "Crane's Echoing Call", rarity: 5, iconUrl: 'https://genshin.jmp.blue/weapons/crane-s-echoing-call/icon' }
+        ];
+        const FALLBACK_4STAR: WeaponEntry[] = [
+                { id: 'sacrificial-sword', name: 'Sacrificial Sword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-sword/icon' },
+                { id: 'sacrificial-greatsword', name: 'Sacrificial Greatsword', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/sacrificial-greatsword/icon' },
+                { id: 'dragon-s-bane', name: "Dragon's Bane", rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/dragon-s-bane/icon' },
+                { id: 'rainslasher', name: 'Rainslasher', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/rainslasher/icon' },
+                { id: 'eye-of-perception', name: 'Eye of Perception', rarity: 4, iconUrl: 'https://genshin.jmp.blue/weapons/eye-of-perception/icon' }
+        ];
+
+        // Use API data if available, otherwise fallback
+        let activeFeatured5 = $derived(hasApiData ? featured5StarWeapons.slice(0, 2) : FALLBACK_5STAR);
+        let activeFeatured4 = $derived(hasApiData ? featured4StarWeapons : FALLBACK_4STAR);
+
+        // Init pools whenever featured weapons change
         $effect(() => {
-                setDefaultWeaponPools(
-                        [FEATURED_5STAR[0]!, FEATURED_5STAR[1]!],
-                        FEATURED_4STAR
-                );
-                bannerState.chosenPathId = FEATURED_5STAR[chosenPathIdx]!.id;
+                if (activeFeatured5.length >= 2) {
+                        setDefaultWeaponPools(
+                                [activeFeatured5[0]!, activeFeatured5[1]!],
+                                activeFeatured4
+                        );
+                        bannerState.chosenPathId = activeFeatured5[chosenPathIdx]?.id ?? activeFeatured5[0]!.id;
+                }
         });
 
         function switchPath(idx: 0 | 1) {
                 chosenPathIdx = idx;
-                bannerState.chosenPathId = FEATURED_5STAR[idx]!.id;
+                bannerState.chosenPathId = activeFeatured5[idx]?.id ?? activeFeatured5[0]!.id;
         }
 
         function doSingle() {
@@ -71,7 +110,7 @@
 
         function resetState() {
                 bannerState = createInitialWeaponState();
-                bannerState.chosenPathId = FEATURED_5STAR[chosenPathIdx]!.id;
+                bannerState.chosenPathId = activeFeatured5[chosenPathIdx]?.id ?? activeFeatured5[0]!.id;
                 lastResults = [];
                 pullLog = [];
                 totalSpent = 0;
@@ -105,8 +144,14 @@
                 return 'data:image/svg+xml,' + encodeURIComponent(svg);
         }
 
-        function handleImgError(e: Event, name: string, rarity: number) {
+        function handleImgError(e: Event, name: string, rarity: number, fallbackIcon?: string) {
                 const img = e.currentTarget as HTMLImageElement;
+                // Try API-provided fallback icon first (HoYoverse CDN)
+                if (fallbackIcon && img.src !== fallbackIcon) {
+                        img.src = fallbackIcon;
+                        return;
+                }
+                // Final fallback: inline SVG
                 const fallback = fallbackDataUrl(name, rarity);
                 if (img.src !== fallback) {
                         img.src = fallback;
@@ -121,7 +166,14 @@
                 <div class="flex items-center justify-between mb-4">
                         <div>
                                 <h2 class="font-heading text-lg font-semibold text-[#F2E6D0]">Weapon Event Banner</h2>
-                                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mt-0.5">Epitomized Path — pilih 5★ incaranmu</div>
+                                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mt-0.5">
+                                        Epitomized Path — pilih 5★ incaranmu
+                                        {#if hasApiData}
+                                                • v{banners.weaponBannerVersion} {#if banners.weaponBannerCountdown}<span class="text-[#E8745A]">• ⏳ {banners.weaponBannerCountdown}</span>{/if}
+                                        {:else}
+                                                • <span class="text-[#E0B25A]">Fallback pool (API unavailable)</span>
+                                        {/if}
+                                </div>
                         </div>
                         <div class="text-right">
                                 <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Total Spent</div>
@@ -131,7 +183,7 @@
 
                 <!-- Featured Weapons -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                        {#each FEATURED_5STAR as w, i}
+                        {#each activeFeatured5 as w, i}
                                 <button
                                         onclick={() => switchPath(i as 0 | 1)}
                                         class="relative p-4 rounded-lg border-2 transition-all text-left {chosenPathIdx === i ? 'border-[#E6C77A] bg-[#C9A45A]/10 gold-glow' : 'border-[#24314A] hover:border-[#C9A45A]/50 bg-[#0B1020]/40'}"
@@ -142,7 +194,7 @@
                                         <div class="flex items-center gap-3">
                                                 <div class="w-14 h-14 rounded-md overflow-hidden border border-[#C9A45A]/40 bg-[#0B1020] shrink-0">
                                                         <img src={w.iconUrl} alt={w.name} class="w-full h-full object-cover"
-                                                                onerror={(e: Event) => handleImgError(e, w.name, w.rarity)} />
+                                                                onerror={(e: Event) => handleImgError(e, w.name, w.rarity, w.fallbackIcon)} />
                                                 </div>
                                                 <div class="min-w-0">
                                                         <div class="text-[#E6C77A] text-[10px] tracking-wider">★ ★ ★ ★ ★</div>
@@ -238,7 +290,7 @@
                                         >
                                                 <div class="w-10 h-10 rounded-md overflow-hidden bg-[#0B1020] mb-1">
                                                         <img src={r.iconUrl} alt={r.name} class="w-full h-full object-cover"
-                                                                onerror={(e: Event) => handleImgError(e, r.name, r.rarity)} />
+                                                                onerror={(e: Event) => handleImgError(e, r.name, r.rarity, r.fallbackIcon)} />
                                                 </div>
                                                 <div class="text-[9px] {rarityText(r.rarity)} font-bold">{'★'.repeat(r.rarity)}</div>
                                                 <div class="text-[9px] text-[#F2E6D0] font-semibold leading-tight truncate w-full">{r.name}</div>

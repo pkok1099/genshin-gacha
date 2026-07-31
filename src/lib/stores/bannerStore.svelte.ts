@@ -25,6 +25,7 @@ const STANDARD_4STAR_SLUGS = [
 ];
 
 let banners: BannerData[] = $state([]);
+let weaponBanner: BannerData | null = $state(null);
 let isLoading: boolean = $state(false);
 let apiError: string = $state('');
 
@@ -83,6 +84,9 @@ async function fetchBanners(): Promise<void> {
             if (!game.selectedBannerId && data.length > 0) {
                 game.selectBanner(String(data[0].id));
             }
+            // Extract weapon banner (banner with weapons array containing 5★)
+            const wb = data.find((b) => Array.isArray(b.weapons) && b.weapons.some((w) => w.rarity === 5));
+            weaponBanner = wb ?? null;
         }
     } catch (err) {
         console.error('[bannerStore] fetch failed:', err);
@@ -129,6 +133,30 @@ function getCountdown(): string {
     return `${d}h ${h}j ${m}m`;
 }
 
+function getFeatured5StarWeapons(): BannerData['weapons'][number][] {
+    if (!weaponBanner) return [];
+    return weaponBanner.weapons.filter((w) => w.rarity === 5);
+}
+
+function getFeatured4StarWeapons(): BannerData['weapons'][number][] {
+    if (!weaponBanner) return [];
+    return weaponBanner.weapons.filter((w) => w.rarity === 4);
+}
+
+function getWeaponBannerVersion(): string {
+    return weaponBanner?.version ?? '—';
+}
+
+function getWeaponBannerCountdown(): string {
+    if (!weaponBanner) return '';
+    const diff = weaponBanner.end_time * 1000 - Date.now();
+    if (diff <= 0) return 'Berakhir';
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return `${d}h ${h}j ${m}m`;
+}
+
 export function getBannerStore() {
     return {
         get banners() { return banners; },
@@ -139,6 +167,12 @@ export function getBannerStore() {
         get featured5Star() { return getFeatured5Star(); },
         get featured4Stars() { return getFeatured4Stars(); },
         get countdownText() { return getCountdown(); },
+        // Weapon banner (from API)
+        get weaponBanner() { return weaponBanner; },
+        get featured5StarWeapons() { return getFeatured5StarWeapons(); },
+        get featured4StarWeapons() { return getFeatured4StarWeapons(); },
+        get weaponBannerVersion() { return getWeaponBannerVersion(); },
+        get weaponBannerCountdown() { return getWeaponBannerCountdown(); },
         fetchBanners,
         selectBanner
     };
