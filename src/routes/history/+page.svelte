@@ -5,8 +5,10 @@
         import LuckStats from '$lib/components/LuckStats.svelte';
         import LuckChart from '$lib/components/LuckChart.svelte';
         import BannerSummary from '$lib/components/BannerSummary.svelte';
+        import LuckComparison from '$lib/components/LuckComparison.svelte';
         import ThemedModal from '$lib/components/ThemedModal.svelte';
-        import { fade } from 'svelte/transition';
+        import { fade, fly } from 'svelte/transition';
+        import { cubicOut } from 'svelte/easing';
         import { t, localeKey } from '$lib/i18n/index.svelte';
         import { playTick, playError } from '$lib/audio/synth.svelte';
 
@@ -62,6 +64,70 @@
                 confirmReset = true;
                 playTick();
         }
+
+        // ── Export / Import wish history ───────────────────────────────────────
+        // Export: serialize the full wish history (+ metadata envelope) to a
+        // JSON file and trigger a browser download.
+        // Import: read a JSON file (envelope or bare array), validate each
+        // entry, and replace the current history. We use a hidden <input
+        // type="file"> triggered by a button click so we stay in Svelte's
+        // reactivity model (no ad-hoc DOM listeners).
+        let importToast: { kind: 'ok' | 'err'; msg: string } | null = $state(null);
+        let fileInput: HTMLInputElement | null = $state(null);
+
+        function handleExport() {
+                const envelope = game.exportHistory();
+                const json = JSON.stringify(envelope, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const date = new Date().toISOString().slice(0, 10);
+                a.href = url;
+                a.download = `genshin-wish-history-${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                playTick();
+                importToast = { kind: 'ok', msg: `Exported ${envelope.history.length} pulls to JSON file.` };
+                setTimeout(() => { importToast = null; }, 3000);
+        }
+
+        function handleImportClick() {
+                fileInput?.click();
+        }
+
+        function handleFileChange(e: Event) {
+                const input = e.currentTarget as HTMLInputElement;
+                const file = input.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                        try {
+                                const parsed = JSON.parse(String(reader.result));
+                                const count = game.importHistory(parsed);
+                                if (count > 0) {
+                                        playTick();
+                                        importToast = { kind: 'ok', msg: `Imported ${count} pulls from ${file.name}.` };
+                                } else {
+                                        playError();
+                                        importToast = { kind: 'err', msg: `No valid wish entries found in ${file.name}.` };
+                                }
+                        } catch (err) {
+                                playError();
+                                importToast = { kind: 'err', msg: `Failed to parse JSON: ${(err as Error).message}` };
+                        }
+                        // Reset the input so the same file can be re-imported.
+                        input.value = '';
+                        setTimeout(() => { importToast = null; }, 4000);
+                };
+                reader.onerror = () => {
+                        playError();
+                        importToast = { kind: 'err', msg: 'Failed to read file.' };
+                        setTimeout(() => { importToast = null; }, 4000);
+                };
+                reader.readAsText(file);
+        }
 </script>
 
 <svelte:head>
@@ -78,13 +144,28 @@
                                 {t('history.subtitle', { count: game.totalWishes.toLocaleString('en-US') })}
                         </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap">
                         <a
                                 href="/wish"
                                 class="btn-press px-4 py-2 rounded-md border border-[#C9A45A]/40 bg-gradient-to-r from-[#24314A] to-[#1A2337] text-[#E6C77A] text-xs font-semibold uppercase tracking-wider transition-all hover:shadow-[0_0_20px_rgba(201,164,90,0.25)]"
                         >
                                 ← {t('nav.wish')}
                         </a>
+                        <button
+                                onclick={handleExport}
+                                disabled={game.wishHistory.length === 0}
+                                class="btn-press px-4 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Download wish history as JSON file"
+                        >
+                                ⤓ Export
+                        </button>
+                        <button
+                                onclick={handleImportClick}
+                                class="btn-press px-4 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-semibold uppercase tracking-wider transition-all"
+                                title="Import wish history from JSON file (replaces current)"
+                        >
+                                ⤒ Import
+                        </button>
                         <button
                                 onclick={openReset}
                                 class="btn-press px-4 py-2 rounded-md border border-[#8B3A3A]/40 bg-[#8B3A3A]/15 text-[#E8745A] text-xs font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
@@ -93,6 +174,27 @@
                         </button>
                 </div>
         </section>
+
+        <!-- Hidden file input for import -->
+        <input
+                type="file"
+                accept="application/json,.json"
+                onchange={handleFileChange}
+                bind:this={fileInput}
+                class="hidden"
+        />
+
+        <!-- Import/export toast -->
+        {#if importToast}
+                <div
+                        class="fixed top-4 right-4 z-50 px-4 py-3 rounded-lg border shadow-xl text-sm font-semibold {importToast.kind === 'ok'
+                                ? 'bg-[#1A2337] border-[#6FAF6E]/50 text-[#6FAF6E]'
+                                : 'bg-[#1A2337] border-[#E8745A]/50 text-[#E8745A]'}"
+                        in:fly={{ y: -20, duration: 200, easing: cubicOut }}
+                >
+                        {importToast.kind === 'ok' ? '✓ ' : '✗ '}{importToast.msg}
+                </div>
+        {/if}
 
         {#if game.wishHistory.length === 0}
                 <!-- Empty state -->
@@ -154,6 +256,11 @@
                 <section>
                         <h2 class="font-heading text-xl font-semibold text-[#F2E6D0] mb-3">{t('history.section.distribution')}</h2>
                         <LuckChart history={filteredHistory} {stats} />
+                </section>
+
+                <!-- ═══ Luck Comparison (per-banner) ═══ -->
+                <section>
+                        <LuckComparison />
                 </section>
         {/if}
 

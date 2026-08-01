@@ -393,6 +393,74 @@ function resetHistoryOnly(): void {
     simState.totalWishes = 0;
 }
 
+// ─── Import / Export wish history ────────────────────────────────────────────
+// Used by the /history page's export/import JSON feature so users can back
+// up their pull history or share it across devices. The exported blob is a
+// plain JSON array of WishResult objects plus a small metadata envelope.
+
+export interface HistoryExportEnvelope {
+    version: 1;
+    exportedAt: number;            // epoch ms
+    totalWishes: number;
+    history: WishResult[];
+}
+
+function exportHistory(): HistoryExportEnvelope {
+    return {
+        version: 1,
+        exportedAt: Date.now(),
+        totalWishes: simState.totalWishes,
+        history: [...simState.wishHistory]
+    };
+}
+
+// Import replaces the current history entirely. We re-validate each entry's
+// shape minimally (must have id + name + rarity + timestamp); malformed
+// entries are skipped rather than aborting the whole import. Returns the
+// number of entries successfully imported so the UI can show a toast.
+function importHistory(envelope: unknown): number {
+    if (!envelope || typeof envelope !== 'object') return 0;
+    const env = envelope as Partial<HistoryExportEnvelope>;
+    // Accept either a bare array (legacy) or the v1 envelope.
+    const rawHistory: unknown = Array.isArray(envelope) ? envelope : env.history;
+    if (!Array.isArray(rawHistory)) return 0;
+
+    const valid: WishResult[] = [];
+    for (const entry of rawHistory) {
+        if (!entry || typeof entry !== 'object') continue;
+        const e = entry as Partial<WishResult>;
+        // Minimal shape check — pullNumber + totalWishes are recomputed below
+        // so we don't require them to be present in the import.
+        if (typeof e.id !== 'string' || typeof e.name !== 'string' ||
+            typeof e.rarity !== 'number' || typeof e.timestamp !== 'number') {
+            continue;
+        }
+        valid.push({
+            id: e.id,
+            pullNumber: typeof e.pullNumber === 'number' ? e.pullNumber : valid.length + 1,
+            name: e.name,
+            type: e.type === 'weapon' ? 'weapon' : 'character',
+            rarity: (e.rarity === 5 || e.rarity === 4 || e.rarity === 3) ? e.rarity : 3,
+            element: typeof e.element === 'string' ? e.element : undefined,
+            icon: typeof e.icon === 'string' ? e.icon : '',
+            fallbackIcon: typeof e.fallbackIcon === 'string' ? e.fallbackIcon : undefined,
+            pityCount: typeof e.pityCount === 'number' ? e.pityCount : 0,
+            is5050Win: typeof e.is5050Win === 'boolean' ? e.is5050Win : undefined,
+            isRateUp: typeof e.isRateUp === 'boolean' ? e.isRateUp : false,
+            isGuaranteed: typeof e.isGuaranteed === 'boolean' ? e.isGuaranteed : false,
+            bannerId: typeof e.bannerId === 'string' ? e.bannerId : 'character',
+            timestamp: e.timestamp
+        });
+    }
+
+    if (valid.length === 0) return 0;
+
+    // Replace history entirely + recompute totalWishes from the new array.
+    simState.wishHistory = valid;
+    simState.totalWishes = valid.length;
+    return valid.length;
+}
+
 function pushResultsToHistory(results: PullResult[], bannerId: string): WishResult[] {
     const newEntries: WishResult[] = results.map((r) => {
         const entry: WishResult = {
@@ -668,6 +736,10 @@ export function getGameState() {
 
         resetAll,
         resetHistoryOnly,
+
+        // ── Import / Export ──
+        exportHistory,
+        importHistory,
 
         // ── Pull ──
         doSinglePull,
