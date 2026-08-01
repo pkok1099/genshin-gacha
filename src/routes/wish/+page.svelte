@@ -244,6 +244,26 @@
                                                                 {/each}
                                                         </div>
                                                 {/if}
+                                                <!-- Banner selector — when multiple Character Event banners are
+                                                     active (e.g. two phase-2 banners running concurrently), let the
+                                                     user switch without scrolling down to the BannerCard grid. -->
+                                                {#if banners.banners.length > 1}
+                                                        <div class="pt-2">
+                                                                <label for="banner-select" class="text-[10px] text-[#8E97AA] uppercase tracking-wider mr-2">Banner:</label>
+                                                                <select
+                                                                        id="banner-select"
+                                                                        value={banners.selectedBannerId}
+                                                                        onchange={(e) => banners.selectBanner((e.currentTarget as HTMLSelectElement).value)}
+                                                                        class="bg-[#0B1020] border border-[#C9A45A]/30 text-[#F2E6D0] text-xs rounded-md px-2 py-1.5 focus:ring-1 focus:ring-[#E6C77A] focus:border-[#E6C77A] outline-none cursor-pointer hover:border-[#C9A45A]/60 transition-colors max-w-[260px]"
+                                                                >
+                                                                        {#each banners.banners as b}
+                                                                                <option value={String(b.id)}>
+                                                                                        {b.characters.find(c => c.rarity === 5)?.name ?? `Banner #${b.id}`} · v{b.version}
+                                                                                </option>
+                                                                        {/each}
+                                                                </select>
+                                                        </div>
+                                                {/if}
                                         {:else if game.wishMode === 'standard'}
                                                 <h2 class="font-heading text-3xl md:text-4xl font-bold text-[#F2E6D0] leading-tight">
                                                         Wanderlust Invocation

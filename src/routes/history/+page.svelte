@@ -4,6 +4,7 @@
         import WishHistoryTable from '$lib/components/WishHistoryTable.svelte';
         import LuckStats from '$lib/components/LuckStats.svelte';
         import LuckChart from '$lib/components/LuckChart.svelte';
+        import BannerSummary from '$lib/components/BannerSummary.svelte';
         import ThemedModal from '$lib/components/ThemedModal.svelte';
         import { fade } from 'svelte/transition';
         import { t, localeKey } from '$lib/i18n/index.svelte';
@@ -111,6 +112,9 @@
                         </a>
                 </div>
         {:else}
+                <!-- ═══ Per-Banner Summary ═══ -->
+                <BannerSummary />
+
                 <!-- ═══ Banner Filter ═══ -->
                 <section class="space-y-2">
                         <h2 class="font-heading text-sm font-semibold text-[#E6C77A] uppercase tracking-wider">Filter Banner</h2>
