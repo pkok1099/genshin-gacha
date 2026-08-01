@@ -4,6 +4,7 @@
         import { getGameState, type WishResult, type WishMode } from '$lib/stores/gameState.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
         import PityBar from '$lib/components/PityBar.svelte';
+        import ModePityBadge from '$lib/components/ModePityBadge.svelte';
         import WishAnimation from '$lib/components/WishAnimation.svelte';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
         import { STANDARD_WISH_POOLS } from '$lib/utils/standardWishEngine';
@@ -430,13 +431,16 @@
 
         <!-- ═══ Pity + Recent ═══ -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-1 space-y-4">
+                        <!-- Active mode detailed pity (existing PityBar) -->
                         <PityBar
                                 pity5={game.pity5}
                                 pity4={game.pity4}
                                 guaranteed5={game.guaranteed5}
                                 guaranteed4={game.guaranteed4}
                         />
+                        <!-- Compact per-mode pity overview (all 3 banners at a glance) -->
+                        <ModePityBadge />
                 </div>
 
                 <div class="lg:col-span-2 bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/20 shadow-xl p-4 space-y-3">
