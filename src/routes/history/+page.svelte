@@ -1,6 +1,7 @@
 <script lang="ts">
         import { getGameState, type WishMode } from '$lib/stores/gameState.svelte';
         import { calculateLuckStats } from '$lib/utils/luckScore';
+        import { toast } from '$lib/stores/toast.svelte';
         import WishHistoryTable from '$lib/components/WishHistoryTable.svelte';
         import LuckStats from '$lib/components/LuckStats.svelte';
         import LuckChart from '$lib/components/LuckChart.svelte';
@@ -9,8 +10,7 @@
         import PityHeatmap from '$lib/components/PityHeatmap.svelte';
         import AchievementTracker from '$lib/components/AchievementTracker.svelte';
         import ThemedModal from '$lib/components/ThemedModal.svelte';
-        import { fade, fly } from 'svelte/transition';
-        import { cubicOut } from 'svelte/easing';
+        import { fade } from 'svelte/transition';
         import { t, localeKey } from '$lib/i18n/index.svelte';
         import { playTick, playError } from '$lib/audio/synth.svelte';
 
@@ -74,7 +74,6 @@
         // entry, and replace the current history. We use a hidden <input
         // type="file"> triggered by a button click so we stay in Svelte's
         // reactivity model (no ad-hoc DOM listeners).
-        let importToast: { kind: 'ok' | 'err'; msg: string } | null = $state(null);
         let fileInput: HTMLInputElement | null = $state(null);
 
         function handleExport() {
@@ -91,8 +90,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 playTick();
-                importToast = { kind: 'ok', msg: `Exported ${envelope.history.length} pulls to JSON file.` };
-                setTimeout(() => { importToast = null; }, 3000);
+                toast.success('Exported', `Exported ${envelope.history.length} pulls to JSON file.`);
         }
 
         function handleImportClick() {
@@ -110,23 +108,21 @@
                                 const count = game.importHistory(parsed);
                                 if (count > 0) {
                                         playTick();
-                                        importToast = { kind: 'ok', msg: `Imported ${count} pulls from ${file.name}.` };
+                                        toast.success('Imported', `Imported ${count} pulls from ${file.name}.`);
                                 } else {
                                         playError();
-                                        importToast = { kind: 'err', msg: `No valid wish entries found in ${file.name}.` };
+                                        toast.error('Import Failed', `No valid wish entries found in ${file.name}.`);
                                 }
                         } catch (err) {
                                 playError();
-                                importToast = { kind: 'err', msg: `Failed to parse JSON: ${(err as Error).message}` };
+                                toast.error('Import Failed', `Failed to parse JSON: ${(err as Error).message}`);
                         }
                         // Reset the input so the same file can be re-imported.
                         input.value = '';
-                        setTimeout(() => { importToast = null; }, 4000);
                 };
                 reader.onerror = () => {
                         playError();
-                        importToast = { kind: 'err', msg: 'Failed to read file.' };
-                        setTimeout(() => { importToast = null; }, 4000);
+                        toast.error('Import Failed', 'Failed to read file.');
                 };
                 reader.readAsText(file);
         }
@@ -185,18 +181,6 @@
                 bind:this={fileInput}
                 class="hidden"
         />
-
-        <!-- Import/export toast -->
-        {#if importToast}
-                <div
-                        class="fixed top-4 right-4 z-50 px-4 py-3 rounded-lg border shadow-xl text-sm font-semibold {importToast.kind === 'ok'
-                                ? 'bg-[#1A2337] border-[#6FAF6E]/50 text-[#6FAF6E]'
-                                : 'bg-[#1A2337] border-[#E8745A]/50 text-[#E8745A]'}"
-                        in:fly={{ y: -20, duration: 200, easing: cubicOut }}
-                >
-                        {importToast.kind === 'ok' ? '✓ ' : '✗ '}{importToast.msg}
-                </div>
-        {/if}
 
         {#if game.wishHistory.length === 0}
                 <!-- Empty state -->

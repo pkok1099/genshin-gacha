@@ -506,6 +506,28 @@ body.modal-open {
         text-shadow: 0 0 8px rgba(230, 199, 122, 0.5);
 }
 
+/* ── Loading skeleton shimmer ── */
+/* A placeholder block that shimmers gold while data loads. Used by the
+   SkeletonCard component on the home page (featured banner) and wish
+   page (banner stage) to replace the old 'Loading banner…' text. */
+.skeleton {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(90deg, #1A2337 0%, #24314A 50%, #1A2337 100%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+        height: 0.75rem;
+        border-radius: 0.25rem;
+}
+
 /* ── Reduced motion preference ── */
 @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {

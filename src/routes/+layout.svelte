@@ -9,6 +9,7 @@
         import PrimoCounter from '$lib/components/PrimoCounter.svelte';
         import GenshinLoader from '$lib/components/GenshinLoader.svelte';
         import AreaLoader from '$lib/components/AreaLoader.svelte';
+        import Toaster from '$lib/components/Toaster.svelte';
         import type { Region } from '$lib/components/AreaLoader.svelte';
         import { clickOutside } from '$lib/actions/clickOutside';
         import { t, localeKey, toggleLocale, type Locale } from '$lib/i18n/index.svelte';
@@ -334,12 +335,15 @@
 <!-- ═══ Page Content ═══ -->
 {#key page.url.pathname}
         <main
-                in:fade={{ duration: 180 }}
-                out:fade={{ duration: 100 }}
+                in:fly={{ y: 12, duration: 280, easing: cubicOut }}
+                out:fade={{ duration: 120 }}
         >
                 {@render children()}
         </main>
 {/key}
+
+<!-- ═══ Global Toaster (mounted once, any page can push toasts) ═══ -->
+<Toaster />
 
 <!-- ═══ Footer ═══ -->
 <footer class="border-t border-[#C9A45A]/15 mt-16 py-8 px-4">

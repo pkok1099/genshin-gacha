@@ -3,6 +3,7 @@
         import { getBannerStore } from '$lib/stores/bannerStore.svelte';
         import { getGameState } from '$lib/stores/gameState.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
+        import SkeletonCard from '$lib/components/SkeletonCard.svelte';
         import { characterIconBigUrl, characterGachaSplashUrl, slugifyName } from '$lib/services/characterApi';
         import { fly, fade } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
@@ -137,8 +138,8 @@
                                                 </div>
                                         </div>
                                 {:else if banners.isLoading}
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                                <div class="text-[#8E97AA] text-sm animate-pulse">{t('home.loading-banner')}</div>
+                                        <div class="absolute inset-0 flex items-end justify-center">
+                                                <SkeletonCard variant="splash" />
                                         </div>
                                 {/if}
                         </div>
@@ -177,16 +178,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {#if banners.isLoading && banners.banners.length === 0}
                                 {#each [0, 1] as _}
-                                        <div class="bg-[#1A2337] p-4 rounded-xl border border-[#24314A] animate-pulse">
-                                                <div class="flex gap-4 items-center">
-                                                        <div class="w-20 h-20 bg-[#24314A] rounded-lg"></div>
-                                                        <div class="flex-1 space-y-2">
-                                                                <div class="h-3 w-12 bg-[#24314A] rounded-full"></div>
-                                                                <div class="h-5 w-28 bg-[#24314A] rounded"></div>
-                                                                <div class="h-2 w-20 bg-[#24314A] rounded"></div>
-                                                        </div>
-                                                </div>
-                                        </div>
+                                        <SkeletonCard variant="banner-card" />
                                 {/each}
                         {:else}
                                 {#each banners.banners as banner (banner.id)}

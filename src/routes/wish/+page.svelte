@@ -2,7 +2,9 @@
         import { onMount } from 'svelte';
         import { getBannerStore } from '$lib/stores/bannerStore.svelte';
         import { getGameState, type WishResult, type WishMode } from '$lib/stores/gameState.svelte';
+        import { toast } from '$lib/stores/toast.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
+        import SkeletonCard from '$lib/components/SkeletonCard.svelte';
         import PityBar from '$lib/components/PityBar.svelte';
         import ModePityBadge from '$lib/components/ModePityBadge.svelte';
         import WhatIfSimulator from '$lib/components/WhatIfSimulator.svelte';
@@ -73,7 +75,57 @@
 
         function toggleSkipAnimation() {
                 game.setSkipAnimation(!game.skipAnimation);
+                toast.info(
+                        'Skip Animation',
+                        game.skipAnimation ? 'ON — pull tanpa modal flip' : 'OFF — tampilkan animasi flip'
+                );
         }
+
+        // ── Keyboard shortcuts ──────────────────────────────────────────────────
+        // 1 = single pull, 0 = 10-pull, S = toggle skip animation, ? = show hints.
+        // Disabled when an input/textarea/select is focused (so typing in the
+        // primogem field on pity-setup doesn't trigger pulls) or when the wish
+        // animation modal is open.
+        let showShortcutHint = $state(false);
+
+        function isTypingTarget(el: EventTarget | null): boolean {
+                if (!(el instanceof HTMLElement)) return false;
+                const tag = el.tagName.toLowerCase();
+                return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+        }
+
+        function handleKeydown(e: KeyboardEvent) {
+                // Show hint overlay on '?' (Shift+/)
+                if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+                        showShortcutHint = !showShortcutHint;
+                        return;
+                }
+                // Don't intercept when typing in a field
+                if (isTypingTarget(e.target)) return;
+                // Don't intercept when a modal is open (animation modal)
+                if (showAnimation) return;
+
+                if (e.key === '1' && canSingle) {
+                        e.preventDefault();
+                        handleSinglePull();
+                } else if (e.key === '0' && canTen) {
+                        e.preventDefault();
+                        handleTenPull();
+                } else if (e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        toggleSkipAnimation();
+                } else if (e.key === 'Escape' && showShortcutHint) {
+                        showShortcutHint = false;
+                }
+        }
+
+        // Hint overlay auto-dismiss after 5s
+        $effect(() => {
+                if (showShortcutHint) {
+                        const timer = setTimeout(() => { showShortcutHint = false; }, 5000);
+                        return () => clearTimeout(timer);
+                }
+        });
 
         function mapError(reason: 'no_banner' | 'insufficient_primo' | 'novice_maxed'): string {
                 if (reason === 'no_banner') return t('wish.error.no-banner');
@@ -180,7 +232,7 @@
                                                         </div>
                                                 {/key}
                                         {:else if banners.isLoading}
-                                                <div class="absolute inset-0 flex items-center justify-center text-[#8E97AA] text-sm animate-pulse">{t('home.loading-banner')}</div>
+                                                <SkeletonCard variant="splash" />
                                         {:else}
                                                 <div class="absolute inset-0 flex items-center justify-center text-[#8E97AA] text-sm">{t('wish.no-banner')}</div>
                                         {/if}
@@ -519,6 +571,53 @@
         </section>
 
 </div>
+
+<!-- ═══ Keyboard handler ═══ -->
+<svelte:window onkeydown={handleKeydown} />
+
+<!-- ═══ Shortcut hint overlay (press ? to toggle) ═══ -->
+{#if showShortcutHint}
+        <div
+                role="button"
+                tabindex="-1"
+                class="fixed inset-0 z-[90] flex items-center justify-center bg-[#0B1020]/80 backdrop-blur-sm cursor-pointer"
+                onclick={() => showShortcutHint = false}
+                onkeydown={(e) => { if (e.key === 'Escape') showShortcutHint = false; }}
+                transition:fade={{ duration: 150 }}
+        >
+                <div class="bg-[#1A2337] border border-[#C9A45A]/30 rounded-xl shadow-2xl p-6 max-w-sm w-[calc(100vw-2rem)] space-y-4">
+                        <div class="flex items-center justify-between">
+                                <h3 class="font-heading text-lg font-bold text-[#E6C77A] uppercase tracking-wider">Keyboard Shortcuts</h3>
+                                <button
+                                        onclick={() => showShortcutHint = false}
+                                        class="text-[#8E97AA] hover:text-[#F2E6D0] text-xl"
+                                        aria-label="Close"
+                                >✕</button>
+                        </div>
+                        <div class="space-y-2">
+                                <div class="flex items-center justify-between p-2 rounded-md bg-[#0B1020]/40">
+                                        <span class="text-sm text-[#B8C1D3]">Single pull (1×)</span>
+                                        <kbd class="px-2.5 py-1 rounded border border-[#C9A45A]/40 bg-[#24314A] text-[#E6C77A] font-mono text-xs font-bold">1</kbd>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-md bg-[#0B1020]/40">
+                                        <span class="text-sm text-[#B8C1D3]">10-pull</span>
+                                        <kbd class="px-2.5 py-1 rounded border border-[#C9A45A]/40 bg-[#24314A] text-[#E6C77A] font-mono text-xs font-bold">0</kbd>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-md bg-[#0B1020]/40">
+                                        <span class="text-sm text-[#B8C1D3]">Toggle skip animation</span>
+                                        <kbd class="px-2.5 py-1 rounded border border-[#C9A45A]/40 bg-[#24314A] text-[#E6C77A] font-mono text-xs font-bold">S</kbd>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-md bg-[#0B1020]/40">
+                                        <span class="text-sm text-[#B8C1D3]">Show/hide this help</span>
+                                        <kbd class="px-2.5 py-1 rounded border border-[#C9A45A]/40 bg-[#24314A] text-[#E6C77A] font-mono text-xs font-bold">?</kbd>
+                                </div>
+                        </div>
+                        <div class="text-[10px] text-[#8E97AA] text-center pt-2 border-t border-[#24314A]">
+                                Tekan <kbd class="px-1 py-0.5 rounded bg-[#24314A] text-[#E6C77A] font-mono text-[10px]">?</kbd> lagi atau klik di luar untuk tutup. Auto-tutup dalam 5 detik.
+                        </div>
+                </div>
+        </div>
+{/if}
 
 <!-- ═══ Wish Animation Modal ═══ -->
 {#if showAnimation}
