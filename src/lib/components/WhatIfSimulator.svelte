@@ -9,6 +9,10 @@
 
         import { getGameState } from '$lib/stores/gameState.svelte';
         import { bestWorstCase, expectedPullsPer5Star, expectedPullsPerFeatured } from '$lib/utils/pityCalculator';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         const game = getGameState();
 
@@ -93,60 +97,60 @@
 <div class="bg-[#1A2337]/80 backdrop-blur-sm p-4 rounded-xl border border-[#C9A45A]/20 shadow-xl space-y-3">
         <div class="flex items-center justify-between">
                 <h3 class="font-heading text-xs font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">⌖</span> What-If Calculator
+                        <span class="text-[#E6C77A]">⌖</span> {t('whatif.title')}
                 </h3>
                 <a href="/calculator" class="text-[10px] text-[#C9A45A] hover:text-[#E6C77A] uppercase tracking-wider transition-colors">
-                        Full →
+                        {t('whatif.full-link')}
                 </a>
         </div>
 
         <!-- Current state summary -->
         <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="bg-[#0B1020]/40 rounded-md p-2">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Current Pity</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('whatif.current-pity')}</div>
                         <div class="font-mono text-sm font-bold text-[#E6C77A] tabular-nums">{pity5}/90</div>
                 </div>
                 <div class="bg-[#0B1020]/40 rounded-md p-2">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Primogem</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('whatif.primogem')}</div>
                         <div class="font-mono text-sm font-bold text-[#E6C77A] tabular-nums">{fmtPrimo(primogem)}</div>
                 </div>
                 <div class="bg-[#0B1020]/40 rounded-md p-2">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Guaranteed</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('whatif.guaranteed')}</div>
                         <div class="font-mono text-sm font-bold {guaranteed5 ? 'text-[#E6C77A]' : 'text-[#5E6478]'}">
-                                {guaranteed5 ? 'YA' : 'TIDAK'}
+                                {guaranteed5 ? t('whatif.yes') : t('whatif.no')}
                         </div>
                 </div>
         </div>
 
         <!-- Pulls to milestones -->
         <div class="space-y-1.5 pt-2 border-t border-[#24314A]">
-                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mb-1">Pulls to Milestones</div>
+                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mb-1">{t('whatif.milestones')}</div>
 
                 <div class="flex items-center justify-between text-xs">
-                        <span class="text-[#B8C1D3]">To Soft Pity (74)</span>
+                        <span class="text-[#B8C1D3]">{t('whatif.to-soft-pity')}</span>
                         <span class="font-mono font-bold {pullsToSoftPity === 0 ? 'text-[#E8745A]' : 'text-[#E0B25A]'}">
-                                {pullsToSoftPity === 0 ? '✓ AT SOFT' : `${pullsToSoftPity} pulls · ★ ${fmtPrimo(primoToSoftPity)}`}
+                                {pullsToSoftPity === 0 ? t('whatif.at-soft') : `${pullsToSoftPity} ${t('whatif.pulls')} · ★ ${fmtPrimo(primoToSoftPity)}`}
                         </span>
                 </div>
 
                 <div class="flex items-center justify-between text-xs">
-                        <span class="text-[#B8C1D3]">To Hard Pity (90)</span>
+                        <span class="text-[#B8C1D3]">{t('whatif.to-hard-pity')}</span>
                         <span class="font-mono font-bold text-[#E8745A]">
-                                {pullsToHardPity} pulls · ★ {fmtPrimo(primoToHardPity)}
+                                {pullsToHardPity} {t('whatif.pulls')} · ★ {fmtPrimo(primoToHardPity)}
                         </span>
                 </div>
 
                 <div class="flex items-center justify-between text-xs">
-                        <span class="text-[#B8C1D3]">Expected to 5★ <span class="text-[#5E6478]">(avg)</span></span>
+                        <span class="text-[#B8C1D3]">{t('whatif.expected-5star')} <span class="text-[#5E6478]">{t('whatif.avg')}</span></span>
                         <span class="font-mono font-bold text-[#F2E6D0]">
-                                {expPullsTo5Star} pulls · ★ {fmtPrimo(primoExpTo5Star)}
+                                {expPullsTo5Star} {t('whatif.pulls')} · ★ {fmtPrimo(primoExpTo5Star)}
                         </span>
                 </div>
 
                 <div class="flex items-center justify-between text-xs">
-                        <span class="text-[#B8C1D3]">Expected to Featured <span class="text-[#5E6478]">(avg)</span></span>
+                        <span class="text-[#B8C1D3]">{t('whatif.expected-featured')} <span class="text-[#5E6478]">{t('whatif.avg')}</span></span>
                         <span class="font-mono font-bold text-[#E6C77A]">
-                                {expPullsToFeatured} pulls · ★ {fmtPrimo(primoExpToFeatured)}
+                                {expPullsToFeatured} {t('whatif.pulls')} · ★ {fmtPrimo(primoExpToFeatured)}
                         </span>
                 </div>
         </div>
@@ -154,13 +158,13 @@
         <!-- Best/Worst case to featured -->
         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-[#24314A]">
                 <div class="text-center p-2 rounded-md bg-[#6FAF6E]/10 border border-[#6FAF6E]/30">
-                        <div class="text-[9px] text-[#6FAF6E] uppercase tracking-wider">Best Case</div>
-                        <div class="font-mono text-sm font-bold text-[#6FAF6E] tabular-nums">{bwCase.bestCase} pulls</div>
+                        <div class="text-[9px] text-[#6FAF6E] uppercase tracking-wider">{t('whatif.best-case')}</div>
+                        <div class="font-mono text-sm font-bold text-[#6FAF6E] tabular-nums">{bwCase.bestCase} {t('whatif.pulls')}</div>
                         <div class="text-[9px] text-[#8E97AA] font-mono">★ {fmtPrimo(primoBestCase)}</div>
                 </div>
                 <div class="text-center p-2 rounded-md bg-[#8B3A3A]/15 border border-[#8B3A3A]/40">
-                        <div class="text-[9px] text-[#E8745A] uppercase tracking-wider">Worst Case</div>
-                        <div class="font-mono text-sm font-bold text-[#E8745A] tabular-nums">{bwCase.worstCase} pulls</div>
+                        <div class="text-[9px] text-[#E8745A] uppercase tracking-wider">{t('whatif.worst-case')}</div>
+                        <div class="font-mono text-sm font-bold text-[#E8745A] tabular-nums">{bwCase.worstCase} {t('whatif.pulls')}</div>
                         <div class="text-[9px] text-[#8E97AA] font-mono">★ {fmtPrimo(primoWorstCase)}</div>
                 </div>
         </div>
@@ -170,19 +174,19 @@
                 {#if canAffordWorstCase}
                         <div class="text-center p-2.5 rounded-md bg-[#6FAF6E]/15 border border-[#6FAF6E]/40">
                                 <div class="text-xs font-bold text-[#6FAF6E] uppercase tracking-wider">
-                                        ✓ Bisa Afford Featured!
+                                        {t('whatif.afford-yes')}
                                 </div>
                                 <div class="text-[10px] text-[#B8C1D3] mt-0.5">
-                                        Primogemmu cukup untuk worst-case path ke featured 5★
+                                        {t('whatif.afford-yes-desc')}
                                 </div>
                         </div>
                 {:else}
                         <div class="text-center p-2.5 rounded-md bg-[#E0B25A]/10 border border-[#E0B25A]/30">
                                 <div class="text-xs font-bold text-[#E0B25A] uppercase tracking-wider">
-                                        ⚠ Kurang ★ {fmtPrimo(primoShortfall)}
+                                        {t('whatif.afford-no')} ★ {fmtPrimo(primoShortfall)}
                                 </div>
                                 <div class="text-[10px] text-[#B8C1D3] mt-0.5">
-                                        Untuk jaminan featured 5★ (worst case)
+                                        {t('whatif.afford-no-desc')}
                                 </div>
                         </div>
                 {/if}
@@ -191,11 +195,11 @@
                 {#if affordablePulls > 0}
                         <div class="p-2 rounded-md bg-[#0B1020]/40 border border-[#24314A]">
                                 <div class="flex items-center justify-between text-xs mb-1">
-                                        <span class="text-[#B8C1D3]">Dengan primogem saat ini:</span>
-                                        <span class="font-mono font-bold text-[#F2E6D0]">{affordablePulls} pulls ({affordableTenPulls}× 10-pull)</span>
+                                        <span class="text-[#B8C1D3]">{t('whatif.with-primogem')}</span>
+                                        <span class="font-mono font-bold text-[#F2E6D0]">{affordablePulls} {t('whatif.pulls')} ({affordableTenPulls}× 10-pull)</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                        <span class="text-[10px] text-[#8E97AA] uppercase tracking-wider shrink-0">P(5★)</span>
+                                        <span class="text-[10px] text-[#8E97AA] uppercase tracking-wider shrink-0">{t('whatif.prob-5star')}</span>
                                         <div class="flex-1 h-1.5 bg-[#0B1020] rounded-full overflow-hidden border border-[#24314A]/60">
                                                 <div
                                                         class="h-full rounded-full transition-all duration-500"
@@ -209,6 +213,6 @@
         </div>
 
         <div class="text-[9px] text-[#8E97AA] pt-1 border-t border-[#24314A] leading-relaxed">
-                Berdasarkan pity & primogem banner aktif. Probabilitas pakai kurva soft-pity (base 0.6%, +6%/pull di atas 74).
+                {t('whatif.footer')}
         </div>
 </div>

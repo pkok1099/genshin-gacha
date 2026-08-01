@@ -10,6 +10,10 @@
         // bannerId (same logic as the history page filter).
 
         import { getGameState, type WishMode, type WishResult } from '$lib/stores/gameState.svelte';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         const game = getGameState();
 
@@ -81,12 +85,12 @@
         }
 
         function streakLabel(s: number): string {
-                if (s >= 80) return 'HAMPIR HARD PITY!';
-                if (s >= 74) return 'SOFT PITY ZONE';
-                if (s >= 60) return 'Mendekati Soft Pity';
-                if (s >= 30) return 'Streak Sedang';
-                if (s > 0) return 'Streak Awal';
-                return 'Baru saja dapat 5★';
+                if (s >= 80) return t('streak.label.hard');
+                if (s >= 74) return t('streak.label.soft');
+                if (s >= 60) return t('streak.label.near-soft');
+                if (s >= 30) return t('streak.label.mid');
+                if (s > 0) return t('streak.label.early');
+                return t('streak.label.just-got');
         }
 
         function streakLabelClass(s: number): string {
@@ -116,7 +120,7 @@
 <div class="bg-[#1A2337]/80 backdrop-blur-sm p-4 rounded-xl border border-[#C9A45A]/20 shadow-xl space-y-3">
         <div class="flex items-center justify-between">
                 <h3 class="font-heading text-xs font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">🔥</span> No-5★ Streak
+                        <span class="text-[#E6C77A]">🔥</span> {t('streak.title')}
                 </h3>
                 <span class="text-[10px] text-[#8E97AA] uppercase tracking-wider">
                         {#if activeMode === 'character'}Char Event{:else if activeMode === 'standard'}Standard{:else}Novice{/if}
@@ -125,7 +129,7 @@
 
         <!-- Current streak (big number) -->
         <div class="text-center py-2">
-                <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider mb-1">Current Streak</div>
+                <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider mb-1">{t('streak.current')}</div>
                 <div class="font-mono text-4xl font-bold tabular-nums {streakColor(streak.current)}">
                         {streak.current}
                         <span class="text-base text-[#8E97AA]">pulls</span>
@@ -166,15 +170,15 @@
         <!-- Stats row -->
         <div class="grid grid-cols-3 gap-2 pt-2 border-t border-[#24314A]">
                 <div class="text-center">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Best Streak</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('streak.best')}</div>
                         <div class="font-mono text-sm font-bold text-[#E6C77A] tabular-nums">{streak.best}</div>
                 </div>
                 <div class="text-center">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Total 5★</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('streak.total5')}</div>
                         <div class="font-mono text-sm font-bold text-[#E6C77A] tabular-nums">{streak.total5}</div>
                 </div>
                 <div class="text-center">
-                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Last 5★</div>
+                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">{t('streak.last5')}</div>
                         <div class="font-mono text-[10px] font-bold text-[#F2E6D0] truncate" title={streak.last5?.name ?? ''}>
                                 {streak.last5 ? streak.last5.name : '—'}
                         </div>
@@ -186,7 +190,7 @@
 
         {#if streak.current >= 74}
                 <div class="text-[10px] text-[#E8745A] bg-[#E8745A]/10 border border-[#E8745A]/30 rounded-md p-2 text-center font-bold uppercase tracking-wider animate-pulse">
-                        ⚠ Soft pity aktif! Peluang 5★ meningkat signifikan
+                        {t('streak.warning')}
                 </div>
         {/if}
 </div>

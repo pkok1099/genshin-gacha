@@ -9,6 +9,10 @@
         // parent having to thread every counter through props.
 
         import { getGameState, type WishMode } from '$lib/stores/gameState.svelte';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         const game = getGameState();
 
@@ -101,10 +105,10 @@
 <div class="bg-[#1A2337]/80 backdrop-blur-sm p-4 rounded-xl border border-[#C9A45A]/20 shadow-xl space-y-3">
         <div class="flex items-center justify-between">
                 <h3 class="font-heading text-xs font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        All Banners Pity
+                        {t('mode-pity.title')}
                 </h3>
                 <a href="/pity-setup" class="text-[10px] text-[#C9A45A] hover:text-[#E6C77A] uppercase tracking-wider transition-colors">
-                        Atur →
+                        {t('mode-pity.configure')}
                 </a>
         </div>
 
@@ -167,6 +171,6 @@
         </div>
 
         <div class="text-[10px] text-[#8E97AA] pt-2 border-t border-[#24314A] leading-relaxed">
-                Tiap banner punya pity terpisah. Pull di satu banner tidak menggeser pity banner lain.
+                {t('mode-pity.footer')}
         </div>
 </div>

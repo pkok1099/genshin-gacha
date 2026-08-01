@@ -10,6 +10,10 @@
                 type SoundCategory
         } from '$lib/audio/synth.svelte';
         import { playWishClick, playCardFlip, playReveal, playTick, playError, playSuccess } from '$lib/audio/synth.svelte';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         // Read the live settings object (reactive via Svelte 5 runes).
         const settings = soundSettingsState();
@@ -23,12 +27,12 @@
         };
 
         const CATEGORIES: CatMeta[] = [
-                { key: 'click',   label: 'Wish Click',  icon: '✦', desc: 'Chime saat klik tombol wish',           preview: playWishClick },
-                { key: 'flip',    label: 'Card Flip',    icon: '↻', desc: 'Suara flip kartu reveal',                preview: playCardFlip },
-                { key: 'reveal',  label: 'Reveal',       icon: '★', desc: 'Fanfare saat reveal 5★/4★/3★',          preview: () => playReveal(5) },
-                { key: 'tick',    label: 'UI Tick',      icon: '·', desc: 'Tick halus untuk tombol UI',             preview: playTick },
-                { key: 'error',   label: 'Error',        icon: '✗', desc: 'Buzz saat error (primogem kurang, dll)', preview: playError },
-                { key: 'success', label: 'Success',      icon: '✓', desc: 'Chime sukses (redeem, apply, dll)',     preview: playSuccess }
+                { key: 'click',   label: t('sound.click'),   icon: '✦', desc: t('sound.click.desc'),   preview: playWishClick },
+                { key: 'flip',    label: t('sound.flip'),    icon: '↻', desc: t('sound.flip.desc'),    preview: playCardFlip },
+                { key: 'reveal',  label: t('sound.reveal'),  icon: '★', desc: t('sound.reveal.desc'),  preview: () => playReveal(5) },
+                { key: 'tick',    label: t('sound.tick'),    icon: '·', desc: t('sound.tick.desc'),    preview: playTick },
+                { key: 'error',   label: t('sound.error'),   icon: '✗', desc: t('sound.error.desc'),   preview: playError },
+                { key: 'success', label: t('sound.success'), icon: '✓', desc: t('sound.success.desc'), preview: playSuccess }
         ];
 
         function volumePercent(): number {
@@ -43,13 +47,13 @@
 
 <div class="bg-[#1A2337]/80 backdrop-blur-sm p-4 rounded-xl border border-[#C9A45A]/20 shadow-xl space-y-3">
         <h3 class="font-heading text-xs font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                <span class="text-[#E6C77A]">♪</span> Sound Settings
+                <span class="text-[#E6C77A]">♪</span> {t('sound.title')}
         </h3>
 
         <!-- Master volume slider -->
         <div class="space-y-1.5">
                 <div class="flex justify-between items-center">
-                        <label for="sound-volume" class="text-[11px] font-bold text-[#E6C77A] uppercase tracking-wider">Volume</label>
+                        <label for="sound-volume" class="text-[11px] font-bold text-[#E6C77A] uppercase tracking-wider">{t('sound.volume')}</label>
                         <span class="text-[10px] font-mono text-[#F2E6D0] tabular-nums">{volumePercent()}%</span>
                 </div>
                 <input
@@ -65,7 +69,7 @@
 
         <!-- Per-category mutes -->
         <div class="space-y-1.5 pt-2 border-t border-[#24314A]">
-                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mb-1">Sound Categories</div>
+                <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider mb-1">{t('sound.categories')}</div>
                 {#each CATEGORIES as cat}
                         {@const muted = settings.muted[cat.key]}
                         <div class="flex items-center justify-between p-1.5 rounded-md bg-[#0B1020]/40 border border-[#24314A]/60">
@@ -81,7 +85,7 @@
                                                 type="button"
                                                 onclick={cat.preview}
                                                 class="px-1.5 py-0.5 rounded text-[10px] text-[#8E97AA] hover:text-[#E6C77A] border border-[#24314A] hover:border-[#C9A45A]/40 transition-colors"
-                                                title="Preview sound"
+                                                title={t('sound.preview')}
                                         >
                                                 ▶
                                         </button>
@@ -101,6 +105,6 @@
         </div>
 
         <div class="text-[9px] text-[#8E97AA] pt-2 border-t border-[#24314A] leading-relaxed">
-                Volume dan toggle per-kategori disimpan otomatis. Klik ▶ untuk preview suara. Master enable/disable ada di header (tombol Suara).
+                {t('sound.footer')}
         </div>
 </div>

@@ -1,6 +1,10 @@
 <script lang="ts">
         import type { BannerData } from '$lib/services/bannerApi';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
+        import { t, localeKey } from '$lib/i18n/index.svelte';
+
+        // Re-render on locale change
+        void localeKey();
 
         let {
                 banner,
@@ -96,7 +100,7 @@
 
                         <!-- Countdown -->
                         <div class="mt-1.5 text-[10px] text-[#8E97AA]">
-                                ⏳ <span class="text-[#E8745A] font-mono font-bold">{countdown}</span> tersisa
+                                ⏳ <span class="text-[#E8745A] font-mono font-bold">{countdown}</span> {t('banner.remaining')}
                         </div>
                 </div>
         </div>

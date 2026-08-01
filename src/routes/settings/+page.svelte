@@ -40,24 +40,24 @@
 
         <!-- ═══ Header ═══ -->
         <section class="space-y-2">
-                <h1 class="font-heading text-3xl md:text-4xl font-bold text-[#F2E6D0]">Settings</h1>
+                <h1 class="font-heading text-3xl md:text-4xl font-bold text-[#F2E6D0]">{t('settings.title')}</h1>
                 <p class="text-sm text-[#B8C1D3]">
-                        Atur preferensi simulasi: suara, animasi wish, bahasa, dan lainnya. Semua disimpan otomatis di localStorage.
+                        {t('settings.subtitle')}
                 </p>
         </section>
 
         <!-- ═══ Master Sound Toggle ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 space-y-4">
                 <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">🔊</span> Audio
+                        {t('settings.audio')}
                 </h2>
 
                 <!-- Master enable -->
                 <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
                         <div>
-                                <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Master Sound</div>
+                                <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">{t('settings.master-sound')}</div>
                                 <div class="text-[11px] text-[#8E97AA] mt-0.5">
-                                        {soundOn ? 'Aktif — semua suara akan dimainkan' : 'Dimatikan — tidak ada suara sama sekali'}
+                                        {soundOn ? t('settings.master-on') : t('settings.master-off')}
                                 </div>
                         </div>
                         <button
@@ -77,7 +77,7 @@
                         </div>
                 {:else}
                         <div class="text-[11px] text-[#8E97AA] italic p-3 bg-[#0B1020]/40 rounded-md border border-[#24314A]">
-                                Aktifkan master sound untuk mengatur volume dan per-kategori.
+                                {t('settings.master-hint')}
                         </div>
                 {/if}
         </section>
@@ -85,16 +85,16 @@
         <!-- ═══ Wish Animation ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 space-y-4">
                 <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">✦</span> Wish Animation
+                        {t('settings.wish-anim')}
                 </h2>
 
                 <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
                         <div>
-                                <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Skip Animation</div>
+                                <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">{t('wish.skip-animation.label')}</div>
                                 <div class="text-[11px] text-[#8E97AA] mt-0.5">
                                         {game.skipAnimation
-                                                ? 'ON — pull langsung masuk history, tanpa modal flip'
-                                                : 'OFF — tampilkan animasi flip card setelah pull'}
+                                                ? t('wish.skip-animation.on')
+                                                : t('wish.skip-animation.off')}
                                 </div>
                         </div>
                         <button
@@ -108,14 +108,14 @@
                 </div>
 
                 <div class="text-[11px] text-[#8E97AA] leading-relaxed">
-                        Saat pull dilakukan dengan animasi aktif, kamu masih bisa klik <span class="text-[#E6C77A] font-semibold">⏭ Skip</span> di pojok modal untuk fast-forward pull saat itu saja (tanpa mengubah setting global).
+                        {t('settings.wish-anim-hint')}
                 </div>
         </section>
 
         <!-- ═══ Language ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 space-y-4">
                 <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">🌐</span> Language / Bahasa
+                        {t('settings.language')}
                 </h2>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -143,23 +143,23 @@
         <!-- ═══ Quick Links ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 space-y-3">
                 <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">⚙</span> Related Pages
+                        {t('settings.related')}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <a href="/pity-setup" class="btn-press p-3 rounded-lg border border-[#C9A45A]/30 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all text-center">
                                 <div class="text-xl text-[#E6C77A] mb-1">⚙</div>
-                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">Pity Setup</div>
-                                <div class="text-[10px] text-[#8E97AA] mt-0.5">Atur pity per banner</div>
+                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">{t('settings.related-pity')}</div>
+                                <div class="text-[10px] text-[#8E97AA] mt-0.5">{t('settings.related-pity-desc')}</div>
                         </a>
                         <a href="/calculator" class="btn-press p-3 rounded-lg border border-[#C9A45A]/30 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all text-center">
                                 <div class="text-xl text-[#E6C77A] mb-1">◈</div>
-                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">Calculator</div>
-                                <div class="text-[10px] text-[#8E97AA] mt-0.5">Probabilitas & what-if</div>
+                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">{t('settings.related-calc')}</div>
+                                <div class="text-[10px] text-[#8E97AA] mt-0.5">{t('settings.related-calc-desc')}</div>
                         </a>
                         <a href="/history" class="btn-press p-3 rounded-lg border border-[#C9A45A]/30 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all text-center">
                                 <div class="text-xl text-[#E6C77A] mb-1">☰</div>
-                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">History</div>
-                                <div class="text-[10px] text-[#8E97AA] mt-0.5">Riwayat & achievements</div>
+                                <div class="text-xs font-bold text-[#F2E6D0] uppercase tracking-wider">{t('settings.related-history')}</div>
+                                <div class="text-[10px] text-[#8E97AA] mt-0.5">{t('settings.related-history-desc')}</div>
                         </a>
                 </div>
         </section>
@@ -167,13 +167,13 @@
         <!-- ═══ Data Management ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 space-y-3">
                 <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
-                        <span class="text-[#E6C77A]">💾</span> Data Management
+                        {t('settings.data')}
                 </h2>
                 <div class="text-[11px] text-[#8E97AA] leading-relaxed space-y-1">
-                        <div>• Semua data (pity, history, settings, sound) disimpan di <span class="text-[#E6C77A] font-mono">localStorage</span> browser ini.</div>
-                        <div>• Export/Import wish history tersedia di halaman <a href="/history" class="text-[#C9A45A] hover:text-[#E6C77A]">/history</a>.</div>
-                        <div>• Reset All (pity + history + primogem) tersedia di <a href="/pity-setup" class="text-[#C9A45A] hover:text-[#E6C77A]">/pity-setup</a>.</div>
-                        <div>• Clear browser data / cache akan menghapus semua progres simulasi.</div>
+                        <div>• {t('settings.data-1')}</div>
+                        <div>• {t('settings.data-2')}</div>
+                        <div>• {t('settings.data-3')}</div>
+                        <div>• {t('settings.data-4')}</div>
                 </div>
         </section>
 
