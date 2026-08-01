@@ -307,6 +307,100 @@ export function runWhatIfSimulation(config: WhatIfConfig): WhatIfResult {
         };
 }
 
+// ─── Async batched version ───────────────────────────────────────────────────
+// Runs the same simulation as runWhatIfSimulation but yields to the event
+// loop every BATCH_SIZE trials (via requestAnimationFrame) so the UI doesn't
+// freeze on large trial counts. The calculator page uses this for its "Run"
+// button — the synchronous version is still available for tests / small counts.
+//
+// Usage:  const result = await runWhatIfSimulationAsync(config, onProgress?);
+// The optional onProgress callback receives (completed, total) so the UI can
+// show a progress bar.
+
+export async function runWhatIfSimulationAsync(
+        config: WhatIfConfig,
+        onProgress?: (completed: number, total: number) => void
+): Promise<WhatIfResult> {
+        const startingPity5 = Math.max(0, Math.min(HARD_PITY - 1, Math.floor(config.startingPity5)));
+        const trials = Math.max(1, Math.min(50_000, Math.floor(config.trials)));
+        const startGuaranteed = config.guaranteed;
+        const BATCH_SIZE = 200;  // trials per frame — keeps each chunk <16ms
+
+        const perTrialPulls: number[] = [];
+        let totalPulls = 0;
+        let total5Stars = 0;
+        let totalFeatured = 0;
+
+        for (let batchStart = 0; batchStart < trials; batchStart += BATCH_SIZE) {
+                const batchEnd = Math.min(batchStart + BATCH_SIZE, trials);
+
+                for (let trial = batchStart; trial < batchEnd; trial++) {
+                        let pity = startingPity5;
+                        let guaranteed = startGuaranteed;
+                        let pulls = 0;
+                        let gotFeatured = false;
+
+                        for (let safety = 0; safety < 200; safety++) {
+                                pity += 1;
+                                pulls += 1;
+                                const rate = pity >= HARD_PITY ? 1.0 : get5StarRate(pity - 1);
+
+                                if (rng() < rate) {
+                                        total5Stars += 1;
+                                        if (guaranteed || rng() < RATE_UP_5STAR_CHANCE) {
+                                                gotFeatured = true;
+                                                break;
+                                        } else {
+                                                guaranteed = true;
+                                        }
+                                        pity = 0;
+                                }
+                        }
+
+                        if (gotFeatured) totalFeatured++;
+                        perTrialPulls.push(pulls);
+                        totalPulls += pulls;
+                }
+
+                if (onProgress) onProgress(batchEnd, trials);
+                // Yield to the event loop so the UI can paint the progress bar
+                // and stay responsive. requestAnimationFrame fires before the
+                // next paint, giving us ~60fps progress updates.
+                await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        }
+
+        const sorted = [...perTrialPulls].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+        const avgPulls = totalPulls / trials;
+
+        const BUCKETS = [
+                { bucket: '1-10',  pityMin: 1,  pityMax: 10 },
+                { bucket: '11-30', pityMin: 11, pityMax: 30 },
+                { bucket: '31-50', pityMin: 31, pityMax: 50 },
+                { bucket: '51-70', pityMin: 51, pityMax: 70 },
+                { bucket: '71-90', pityMin: 71, pityMax: 90 },
+                { bucket: '91-120', pityMin: 91, pityMax: 120 },
+                { bucket: '121-180', pityMin: 121, pityMax: 180 }
+        ];
+        const distribution = BUCKETS.map((b) => ({
+                ...b,
+                count: perTrialPulls.filter((p) => p >= b.pityMin && p <= b.pityMax).length
+        }));
+
+        return {
+                trials,
+                avgPullsToFeatured: avgPulls,
+                medianPullsToFeatured: median,
+                totalPulls,
+                total5Stars,
+                totalFeatured,
+                featuredRate: total5Stars > 0 ? totalFeatured / total5Stars : 0,
+                avgPrimogemSpent: avgPulls * COST_SINGLE,
+                distribution,
+                perTrialPulls
+        };
+}
+
 // ─── Helper: pick a region based on element ─────────────────────────────────
 // Used by AreaLoader to theme the loading screen by featured character.
 

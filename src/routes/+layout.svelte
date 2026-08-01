@@ -55,6 +55,15 @@
 
         let isRngActive = $derived(page.url.pathname.startsWith('/rng'));
 
+        // Close mobile nav + RNG dropdown on route change so the menu doesn't
+        // stay open after navigating to a new page.
+        $effect(() => {
+                void page.url.pathname;
+                mobileOpen = false;
+                mobileRngOpen = false;
+                rngDropdownOpen = false;
+        });
+
         // ── Smart loader: only show full loader if navigation takes >280ms.
         //    Loader theme picks region based on the destination's featured char
         //    element if known, otherwise cycles Mondstadt → Liyue → Inazuma...
@@ -230,7 +239,9 @@
                                 <button
                                         class="btn-press md:hidden p-2 rounded-md text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/50 transition-colors"
                                         onclick={() => mobileOpen = !mobileOpen}
-                                        aria-label="Toggle menu"
+                                        aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                                        aria-expanded={mobileOpen}
+                                        aria-controls="mobile-nav"
                                 >
                                         {#if mobileOpen}
                                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -248,6 +259,7 @@
                 <!-- Mobile Nav -->
                 {#if mobileOpen}
                         <nav
+                                id="mobile-nav"
                                 class="md:hidden pb-3 flex flex-col gap-1"
                                 use:clickOutside={() => mobileOpen = false}
                                 transition:fly={{ y: -12, duration: 200, easing: cubicOut }}

@@ -287,5 +287,3 @@ export function executeMultiPull(state: GachaState, count: number): { results: P
     return { results, newState: s };
 }
 
-// (createInitialState & GACHA_CONSTANTS removed — unused; bannerStore + gameState
-// build GachaState snapshots inline, and no consumer reads these exports.)

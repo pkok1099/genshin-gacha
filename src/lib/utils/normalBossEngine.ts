@@ -141,8 +141,10 @@ function rollGemDrops(): GemDrop[] {
 }
 
 function rollBossMaterial(): BossMaterialDrop {
-    // 2-3 per claim, mean ~2.4
-    const quantity = rollChance(0.4) ? 3 : (rollChance(0.5) ? 2 : 3);
+    // 2-3 per claim, mean ~2.4.
+    // P(2) = 0.6, P(3) = 0.4 → mean = 2×0.6 + 3×0.4 = 2.4.
+    // The old code had P(3) = 0.4 + 0.6×0.5 = 0.7, P(2) = 0.3, mean = 2.7.
+    const quantity = rollChance(0.6) ? 2 : 3;
     return { name: 'Boss Material', quantity };
 }
 

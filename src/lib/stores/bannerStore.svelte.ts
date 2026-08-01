@@ -29,6 +29,16 @@ let weaponBanner: BannerData | null = $state(null);
 let isLoading: boolean = $state(false);
 let apiError: string = $state('');
 
+// Tick `now` every 60s so countdown displays stay fresh without a page
+// reload. Previously the countdown was computed once per render and never
+// updated, so a user who kept the page open across a minute/hour boundary
+// saw a stale countdown. Reading `now` in getCountdown()/getWeaponBannerCountdown()
+// makes those functions reactive to the tick.
+let now: number = $state(Date.now());
+if (typeof window !== 'undefined') {
+    setInterval(() => { now = Date.now(); }, 60_000);
+}
+
 function registerBannerInGame(banner: BannerData): void {
     const f5Char = banner.characters.find((c) => c.rarity === 5);
     const f4Chars = banner.characters.filter((c) => c.rarity === 4);
@@ -138,6 +148,7 @@ function getFeatured4Stars(): BannerData['characters'][number][] {
 }
 
 function getCountdown(): string {
+    void now;  // reactive dep — re-runs every 60s tick
     const b = getCurrentBanner();
     if (!b) return '';
     const diff = b.end_time * 1000 - Date.now();
@@ -163,6 +174,7 @@ function getWeaponBannerVersion(): string {
 }
 
 function getWeaponBannerCountdown(): string {
+    void now;  // reactive dep — re-runs every 60s tick
     if (!weaponBanner) return '';
     const diff = weaponBanner.end_time * 1000 - Date.now();
     if (diff <= 0) return 'Berakhir';

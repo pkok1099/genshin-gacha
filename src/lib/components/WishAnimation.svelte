@@ -5,6 +5,7 @@
         import { cubicOut, backOut } from 'svelte/easing';
         import { t, localeKey } from '$lib/i18n/index.svelte';
         import { playReveal } from '$lib/audio/synth.svelte';
+        import { focusTrap } from '$lib/actions/focusTrap';
 
         // Re-render on locale change
         void localeKey();
@@ -109,7 +110,7 @@
                         {/if}
                 </div>
 
-                <div class="relative max-w-4xl w-full">
+                <div class="relative max-w-4xl w-full" use:focusTrap role="dialog" aria-modal="true" aria-label={t('wish-anim.title.multi', { count: results.length })}>
                         <!-- Top-right actions: Skip (one-time) + Close.
                              Positioned inside the modal (top-2 right-2) so they
                              stay visible on small viewports — the previous

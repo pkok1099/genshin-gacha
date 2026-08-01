@@ -86,7 +86,6 @@ export function simulateTalentDrops(
 
     for (let claimIdx = 0; claimIdx < totalClaims; claimIdx++) {
         const claimNumber = claimIdx + 1;
-        const weekNumber = Math.floor(claimIdx / claimsPerWeek) + 1;
         const claimInWeek = (claimIdx % claimsPerWeek) + 1;
         const hasGuarantee = claimInWeek <= 3; // first 3 claims of each week get guarantee
 
@@ -117,7 +116,6 @@ export function simulateTalentDrops(
         }
 
         results.push({ claimNumber, drops, hasGuaranteed5Star: hasGuarantee });
-        void weekNumber; // suppress unused warning
     }
 
     const expected = {

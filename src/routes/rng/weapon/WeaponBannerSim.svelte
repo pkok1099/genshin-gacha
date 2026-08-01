@@ -72,14 +72,24 @@
         let activeFeatured5 = $derived(hasApiData ? featured5StarWeapons.slice(0, 2) : FALLBACK_5STAR);
         let activeFeatured4 = $derived(hasApiData ? featured4StarWeapons : FALLBACK_4STAR);
 
-        // Init pools whenever featured weapons change
+        // Init pools whenever featured weapons change. Only set chosenPathId
+        // if it's not already pointing at a valid featured weapon — otherwise
+        // the user's path selection gets overwritten when the API data arrives
+        // (the old code always reset to chosenPathIdx, snapping the path back
+        // to 0 if the user had switched to 1).
         $effect(() => {
                 if (activeFeatured5.length >= 2) {
                         setDefaultWeaponPools(
                                 [activeFeatured5[0]!, activeFeatured5[1]!],
                                 activeFeatured4
                         );
-                        bannerState.chosenPathId = activeFeatured5[chosenPathIdx]?.id ?? activeFeatured5[0]!.id;
+                        // Only set chosenPathId if it's null/empty or points at
+                        // a weapon that's no longer in the featured pool.
+                        const currentId = bannerState.chosenPathId;
+                        const stillValid = currentId && activeFeatured5.some((w) => w.id === currentId);
+                        if (!stillValid) {
+                                bannerState.chosenPathId = activeFeatured5[chosenPathIdx]?.id ?? activeFeatured5[0]!.id;
+                        }
                 }
         });
 
@@ -225,14 +235,14 @@
                 <div class="grid grid-cols-2 gap-3">
                         <button
                                 onclick={doSingle}
-			class="btn-press px-4 py-3 rounded-md border border-[#C9A45A]/30 bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold uppercase text-sm tracking-wider transition-all"
+                        class="btn-press px-4 py-3 rounded-md border border-[#C9A45A]/30 bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold uppercase text-sm tracking-wider transition-all"
                         >
                                 ✦ 1× Wish
                                 <span class="block text-[10px] text-[#8E97AA] font-mono">{COST_SINGLE} Primo</span>
                         </button>
                         <button
                                 onclick={doTen}
-			class="btn-press px-4 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] hover:shadow-[0_0_25px_rgba(230,199,122,0.4)] text-[#0B1020] font-heading font-bold uppercase text-sm tracking-wider transition-all"
+                        class="btn-press px-4 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] hover:shadow-[0_0_25px_rgba(230,199,122,0.4)] text-[#0B1020] font-heading font-bold uppercase text-sm tracking-wider transition-all"
                         >
                                 ✦✦ 10× Wish
                                 <span class="block text-[10px] text-[#0B1020]/70 font-mono font-semibold">{COST_TEN} Primo</span>

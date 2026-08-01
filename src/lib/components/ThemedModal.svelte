@@ -1,6 +1,7 @@
 <script lang="ts">
         import { fade, fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
+        import { focusTrap } from '$lib/actions/focusTrap';
 
         let {
                 open = false,
@@ -38,6 +39,10 @@
                 transition:fade={{ duration: 150 }}
         >
                 <div
+                        use:focusTrap
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={title}
                         class="w-full {sizeClass} rounded-xl border border-[#C9A45A]/40 bg-gradient-to-br from-[#1A2337] to-[#0B1020] shadow-2xl overflow-hidden"
                         transition:fly={{ y: 20, duration: 200, easing: cubicOut }}
                 >

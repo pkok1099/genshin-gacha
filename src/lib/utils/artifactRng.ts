@@ -140,17 +140,6 @@ function pickRandom<T>(arr: readonly T[]): T {
     return arr[Math.floor(rng() * arr.length)]!;
 }
 
-function pickRandomSteps(): number[] {
-    const all = RNG_STEPS.critRate; // any 4-element array works
-    const indices = [0, 1, 2, 3];
-    // Fisher-Yates shuffle to randomize which step is picked each roll
-    for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]]!;
-    }
-    return indices.map((i) => all[i]!);
-}
-
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export function rollArtifact(

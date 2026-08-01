@@ -9,7 +9,7 @@
                 expectedPullsPer5Star,
                 expectedPullsPerFeatured,
                 bestWorstCase,
-                runWhatIfSimulation,
+                runWhatIfSimulationAsync,
                 type WhatIfResult
         } from '$lib/utils/pityCalculator';
         import { fly, fade } from 'svelte/transition';
@@ -60,24 +60,31 @@
         let resultA: WhatIfResult | null = $state(null);
         let resultB: WhatIfResult | null = $state(null);
         let running = $state(false);
+        let progress = $state(0);  // 0..1, for progress bar
 
         async function runSimulations() {
                 primeAudio();
                 playTick();
                 running = true;
+                progress = 0;
                 // Defer to next tick so UI can show "Running..." state
                 await new Promise((r) => setTimeout(r, 50));
                 try {
-                        resultA = runWhatIfSimulation({
-                                startingPity5: scenarioA.pity5,
-                                guaranteed: scenarioA.guaranteed,
-                                trials: scenarioA.trials
-                        });
-                        resultB = runWhatIfSimulation({
-                                startingPity5: scenarioB.pity5,
-                                guaranteed: scenarioB.guaranteed,
-                                trials: scenarioB.trials
-                        });
+                        // Run scenario A with progress updates — the async
+                        // version yields to the event loop every 200 trials
+                        // so the UI stays responsive (progress bar paints,
+                        // user can still scroll/cancel).
+                        const totalTrials = scenarioA.trials + scenarioB.trials;
+                        let completed = 0;
+                        resultA = await runWhatIfSimulationAsync(
+                                { startingPity5: scenarioA.pity5, guaranteed: scenarioA.guaranteed, trials: scenarioA.trials },
+                                (done) => { completed += done; progress = completed / totalTrials; }
+                        );
+                        resultB = await runWhatIfSimulationAsync(
+                                { startingPity5: scenarioB.pity5, guaranteed: scenarioB.guaranteed, trials: scenarioB.trials },
+                                (done) => { completed += done; progress = completed / totalTrials; }
+                        );
+                        progress = 1;
                         playSuccess();
                 } finally {
                         running = false;
@@ -385,14 +392,22 @@
                                 </section>
                         </div>
 
-                        <div class="flex justify-center">
+                        <div class="flex flex-col items-center gap-3">
                                 <button
                                         onclick={runSimulations}
                                         disabled={running}
-                                        class="btn-press px-8 py-3 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_30px_rgba(230,199,122,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        class="btn-glow px-8 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm"
                                 >
                                         {running ? t('calc.scenario.running') : t('calc.scenario.run')}
                                 </button>
+                                {#if running}
+                                        <div class="w-full max-w-xs">
+                                                <div class="h-1.5 bg-[#0B1020] rounded-full overflow-hidden border border-[#24314A]">
+                                                        <div class="h-full bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] rounded-full transition-all duration-200" style="width: {Math.round(progress * 100)}%"></div>
+                                                </div>
+                                                <div class="text-[10px] text-[#8E97AA] text-center mt-1 font-mono">{Math.round(progress * 100)}%</div>
+                                        </div>
+                                {/if}
                         </div>
 
                         {#if resultA && resultB}

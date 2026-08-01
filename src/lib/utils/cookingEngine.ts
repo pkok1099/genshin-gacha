@@ -96,7 +96,7 @@ const SAMPLE_RECIPES: Recipe[] = [
     },
     {
         id: 'adeptus-temptation', name: 'Adeptus Temptation', stars: 4,
-        specialtyChar: { id: 'ganyu', name: 'Ganyu', specialName: 'Qiankun Mora Meat' }
+        specialtyChar: { id: 'ganyu', name: 'Ganyu', specialName: 'Adeptus Temptation' }
     },
     {
         id: 'chicken-mushroom-skewer', name: 'Chicken-Mushroom Skewer', stars: 1,
@@ -108,11 +108,11 @@ const SAMPLE_RECIPES: Recipe[] = [
     },
     {
         id: 'crispy-bear-paw', name: 'Crispy Bear Paw', stars: 4,
-        specialtyChar: { id: 'raiden-shogun', name: 'Raiden Shogun', specialName: 'Quiet Elegance' }
+        specialtyChar: { id: 'hu-tao', name: 'Hu Tao', specialName: 'Crispy Bear Paw' }
     },
     {
         id: 'moon-pie', name: 'Moon Pie', stars: 4,
-        specialtyChar: { id: 'venti', name: 'Venti', specialName: 'Wings of Heavenly Flight' }
+        specialtyChar: { id: 'noelle', name: 'Noelle', specialName: 'Lighter-Than-Air Pancake' }
     }
 ];
 
