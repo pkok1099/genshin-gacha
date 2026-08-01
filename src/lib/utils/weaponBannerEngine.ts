@@ -161,18 +161,24 @@ export function executeWeaponPull(state: WeaponBannerState): { result: WeaponPul
             s.fatePoints = 0;
         } else if (rng() < FEATURED_5STAR_TOTAL_CHANCE) {
             // Featured (one of two)
-            // If chosen path is set: 50/50 between chosen and the other featured
-            if (s.chosenPathId && rng() < 0.5) {
-                chosenWeapon = bannerPools.featured5.find((w) => w.id === s.chosenPathId) ?? bannerPools.featured5[0]!;
-                isChosenPath = true;
-                s.fatePoints = 0;
-            } else {
-                // The OTHER featured weapon — fate point +1
-                chosenWeapon = bannerPools.featured5.find((w) => w.id !== s.chosenPathId) ?? bannerPools.featured5[1]!;
-                if (s.chosenPathId) {
+            if (s.chosenPathId) {
+                // Chosen path is set: 50/50 between chosen and the other featured
+                if (rng() < 0.5) {
+                    chosenWeapon = bannerPools.featured5.find((w) => w.id === s.chosenPathId) ?? bannerPools.featured5[0]!;
+                    isChosenPath = true;
+                    s.fatePoints = 0;
+                } else {
+                    // The OTHER featured weapon — fate point +1
+                    chosenWeapon = bannerPools.featured5.find((w) => w.id !== s.chosenPathId) ?? bannerPools.featured5[1]!;
                     fatePointChange = 1;
                     s.fatePoints = Math.min(2, s.fatePoints + 1) as 0 | 1 | 2;
                 }
+            } else {
+                // No chosen path: true 50/50 between the two featured weapons.
+                // Without this branch, the old code always picked featured5[0]
+                // (because `w.id !== null` is always true), making the second
+                // featured weapon unreachable.
+                chosenWeapon = bannerPools.featured5[rng() < 0.5 ? 0 : 1] ?? bannerPools.featured5[0]!;
             }
             isFeatured = true;
         } else {
@@ -207,9 +213,16 @@ export function executeWeaponPull(state: WeaponBannerState): { result: WeaponPul
             isFeatured = true;
         } else if (bannerPools.standard4.length > 0) {
             chosenWeapon = pickRandom(bannerPools.standard4);
+        } else if (bannerPools.featured4.length > 0) {
+            // Fallback: featured 4★ if no standard pool.
+            // NEVER dip into featured5 — returning a 5★ weapon inside a
+            // rarity:4 result would show a 5★ under a 4★ star border.
+            chosenWeapon = pickRandom(bannerPools.featured4);
         } else {
-            // Fallback: featured 4★ if no standard pool
-            chosenWeapon = pickRandom(bannerPools.featured4.length > 0 ? bannerPools.featured4 : bannerPools.featured5);
+            // Both 4★ pools empty — this shouldn't happen (the fallback banner
+            // always sets featured4), but defend against a crash by using a
+            // hardcoded fallback weapon.
+            chosenWeapon = { id: 'fallback-4star', name: '3-Star Weapon', rarity: 4 as const };
         }
 
         result = {

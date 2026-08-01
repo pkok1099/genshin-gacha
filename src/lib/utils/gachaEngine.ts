@@ -203,21 +203,40 @@ export function executePull(state: GachaState): { result: PullResult; newState: 
         let isRateUp = false;
         let char: BannerPoolEntry;
 
+        // Capture isGuaranteed BEFORE mutation — same pattern as the 5★ branch
+        // above. The old code read `s.guaranteed4` AFTER the if-branch mutated
+        // it, which inverted the semantics: isGuaranteed=true meant "you just
+        // LOST the 50/50, next 4★ will be guaranteed" instead of "this pull
+        // used the guarantee". This caused WishResult.isGuaranteed to be
+        // mislabeled for 4★ entries in wish history.
+        const isGuaranteed4 = s.guaranteed4;
+
         if (s.guaranteed4 || (featured4Star.length > 0 && rng() < RATE_UP_4STAR_CHANCE)) {
             if (featured4Star.length > 0) {
                 char = pickRandom(featured4Star);
                 isRateUp = true;
                 s.guaranteed4 = false;
-            } else {
+            } else if (standard4Star.length > 0) {
                 char = pickRandom(standard4Star);
+                s.guaranteed4 = false;
+            } else {
+                // Both 4★ pools empty — defensive fallback. This shouldn't
+                // happen (the fallback banner always sets featured4), but
+                // pickRandom([]) would return undefined and crash on char.id.
+                char = { id: 'amber', name: 'Amber', element: 'Pyro' };
+                isRateUp = true;
                 s.guaranteed4 = false;
             }
         } else {
             // Lost 4★ 50/50
             if (standard4Star.length > 0) {
                 char = pickRandom(standard4Star);
-            } else {
+            } else if (featured4Star.length > 0) {
                 char = pickRandom(featured4Star);
+                isRateUp = true;
+            } else {
+                // Same defensive fallback as above.
+                char = { id: 'amber', name: 'Amber', element: 'Pyro' };
                 isRateUp = true;
             }
             s.guaranteed4 = true;
@@ -230,7 +249,7 @@ export function executePull(state: GachaState): { result: PullResult; newState: 
             type: 'character',
             element: char.element,
             isRateUp,
-            isGuaranteed: s.guaranteed4,
+            isGuaranteed: isGuaranteed4,
             iconUrl: charIconUrl(char.id),
             bannerIconUrl: char.bannerIconUrl,
             pityAtPull: s.pity4

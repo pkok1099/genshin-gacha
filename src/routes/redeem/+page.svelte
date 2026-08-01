@@ -9,6 +9,7 @@
         import { cubicOut } from 'svelte/easing';
         import { t, localeKey } from '$lib/i18n/index.svelte';
         import { playSuccess, playTick } from '$lib/audio/synth.svelte';
+        import { toast } from '$lib/stores/toast.svelte';
 
         // Re-render on locale change
         void localeKey();
@@ -42,9 +43,15 @@
                 }
         }
 
-        function handleRedeem(_code: RedeemCode, primoAmount: number) {
+        function handleRedeem(code: RedeemCode, primoAmount: number) {
+                // Dedup: if this code was already redeemed, don't add primogems again.
+                if (game.isRedeemed(code.code)) {
+                        toast.info('Already Claimed', `Code ${code.code} sudah pernah diklaim.`);
+                        return;
+                }
                 if (primoAmount > 0) {
                         game.addPrimogem(primoAmount);
+                        game.markRedeemed(code.code);
                         lastRedeemedAmount = primoAmount;
                         lastRedeemedAt = Date.now();
                         playSuccess();
@@ -73,10 +80,17 @@
 
         function confirmManualRedeem() {
                 if (manualPrimo !== null && manualPrimo > 0) {
-                        game.addPrimogem(manualPrimo);
-                        lastRedeemedAmount = manualPrimo;
+                        // Cap at 99,999,999 to prevent absurd values from
+                        // hand-typed input (e.g. 999999999 would break the
+                        // primogem display and skew all per-pull calculations).
+                        const capped = Math.min(99_999_999, manualPrimo);
+                        game.addPrimogem(capped);
+                        lastRedeemedAmount = capped;
                         lastRedeemedAt = Date.now();
                         playSuccess();
+                        if (capped !== manualPrimo) {
+                                toast.warning('Capped', `Primogem capped to 99,999,999 (you entered ${manualPrimo.toLocaleString('en-US')}).`);
+                        }
                 }
                 showManualModal = false;
                 manualCode = '';

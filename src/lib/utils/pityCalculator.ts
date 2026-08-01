@@ -228,15 +228,24 @@ function rng(): number {
 }
 
 export function runWhatIfSimulation(config: WhatIfConfig): WhatIfResult {
-        const { startingPity5, guaranteed: startGuaranteed, trials } = config;
+        // Clamp inputs defensively — the function is exported and could be
+        // called with untrusted values (e.g. from localStorage-edited state).
+        // startingPity5 must be in [0, HARD_PITY-1]; trials capped at 50000
+        // to prevent main-thread freeze.
+        const startingPity5 = Math.max(0, Math.min(HARD_PITY - 1, Math.floor(config.startingPity5)));
+        const trials = Math.max(1, Math.min(50_000, Math.floor(config.trials)));
+        const startGuaranteed = config.guaranteed;
+
         const perTrialPulls: number[] = [];
         let totalPulls = 0;
         let total5Stars = 0;
+        let totalFeatured = 0;
 
         for (let trial = 0; trial < trials; trial++) {
                 let pity = startingPity5;
                 let guaranteed = startGuaranteed;
                 let pulls = 0;
+                let gotFeatured = false;
 
                 // Pull until featured 5★ obtained (cap at 200 to avoid infinite loops)
                 for (let safety = 0; safety < 200; safety++) {
@@ -249,6 +258,7 @@ export function runWhatIfSimulation(config: WhatIfConfig): WhatIfResult {
                                 total5Stars += 1;
                                 if (guaranteed || rng() < RATE_UP_5STAR_CHANCE) {
                                         // Featured!
+                                        gotFeatured = true;
                                         break;
                                 } else {
                                         // Lost 50/50 → next is guaranteed
@@ -258,6 +268,7 @@ export function runWhatIfSimulation(config: WhatIfConfig): WhatIfResult {
                         }
                 }
 
+                if (gotFeatured) totalFeatured++;
                 perTrialPulls.push(pulls);
                 totalPulls += pulls;
         }
@@ -288,8 +299,8 @@ export function runWhatIfSimulation(config: WhatIfConfig): WhatIfResult {
                 medianPullsToFeatured: median,
                 totalPulls,
                 total5Stars,
-                totalFeatured: trials,
-                featuredRate: total5Stars > 0 ? trials / total5Stars : 0,
+                totalFeatured,
+                featuredRate: total5Stars > 0 ? totalFeatured / total5Stars : 0,
                 avgPrimogemSpent: avgPulls * COST_SINGLE,
                 distribution,
                 perTrialPulls

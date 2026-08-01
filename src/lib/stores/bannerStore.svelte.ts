@@ -66,39 +66,54 @@ function registerBannerInGame(banner: BannerData): void {
     });
 }
 
+// In-flight promise dedup — if fetchBanners is called while a fetch is already
+// in progress, return the same promise instead of firing a second request.
+// This prevents race conditions where multiple components mount in the same
+// tick (e.g. during route pre-load) and both call fetchBanners().
+let inFlight: Promise<void> | null = null;
+
 async function fetchBanners(): Promise<void> {
-    isLoading = true;
-    apiError = '';
-    try {
-        const data = await fetchBannerData();
-        if (data.length === 0) {
+    // If a fetch is already in progress, return the existing promise.
+    if (inFlight) return inFlight;
+
+    const promise = (async () => {
+        isLoading = true;
+        apiError = '';
+        try {
+            const data = await fetchBannerData();
+            if (data.length === 0) {
+                // Use fallback
+                const fb = getFallbackBanner();
+                banners = [fb];
+                registerBannerInGame(fb);
+                game.selectBanner(String(fb.id));
+            } else {
+                banners = data;
+                for (const b of data) registerBannerInGame(b);
+                // Auto-select first if nothing selected yet
+                if (!game.selectedBannerId && data.length > 0) {
+                    game.selectBanner(String(data[0].id));
+                }
+                // Extract weapon banner (banner with weapons array containing 5★)
+                const wb = data.find((b) => Array.isArray(b.weapons) && b.weapons.some((w) => w.rarity === 5));
+                weaponBanner = wb ?? null;
+            }
+        } catch (err) {
+            console.error('[bannerStore] fetch failed:', err);
+            apiError = err instanceof Error ? err.message : 'Unknown error';
             // Use fallback
             const fb = getFallbackBanner();
             banners = [fb];
             registerBannerInGame(fb);
             game.selectBanner(String(fb.id));
-        } else {
-            banners = data;
-            for (const b of data) registerBannerInGame(b);
-            // Auto-select first if nothing selected yet
-            if (!game.selectedBannerId && data.length > 0) {
-                game.selectBanner(String(data[0].id));
-            }
-            // Extract weapon banner (banner with weapons array containing 5★)
-            const wb = data.find((b) => Array.isArray(b.weapons) && b.weapons.some((w) => w.rarity === 5));
-            weaponBanner = wb ?? null;
+        } finally {
+            isLoading = false;
+            inFlight = null;
         }
-    } catch (err) {
-        console.error('[bannerStore] fetch failed:', err);
-        apiError = err instanceof Error ? err.message : 'Unknown error';
-        // Use fallback
-        const fb = getFallbackBanner();
-        banners = [fb];
-        registerBannerInGame(fb);
-        game.selectBanner(String(fb.id));
-    } finally {
-        isLoading = false;
-    }
+    })();
+
+    inFlight = promise;
+    return promise;
 }
 
 function selectBanner(id: string): void {

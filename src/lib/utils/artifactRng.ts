@@ -171,8 +171,14 @@ export function rollArtifact(
     // Initial count: 5★ → 3 or 4 (75% chance of 3, 25% chance of 4); 4★ → 3 only (always 3)
     const initialCount = forcedInitialCount ?? (rarity === 5 ? (rng() < 0.75 ? 3 : 4) : 3);
 
-    // Pick initial substats
-    const shuffled = [...available].sort(() => rng() - 0.5);
+    // Pick initial substats using Fisher-Yates shuffle (unbiased).
+    // The old code used `sort(() => rng() - 0.5)` which is a well-known
+    // biased shuffle — engine-dependent, favors certain permutations.
+    const shuffled = [...available];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+    }
     const initialSubstats: StatValue[] = shuffled.slice(0, initialCount).map((k) => {
         const steps = RNG_STEPS[k];
         const step = pickRandom(steps);
@@ -180,7 +186,10 @@ export function rollArtifact(
     });
 
     const rolls: ArtifactRoll[] = [];
-    let currentSubs = [...initialSubstats];
+    // Deep-copy each StatValue so upgrades don't mutate the initial values.
+    // The old shallow copy `[...initialSubstats]` shared object references,
+    // so `target.value += increment` also modified initialSubstats[i].value.
+    let currentSubs = initialSubstats.map((s) => ({ ...s }));
 
     // Upgrade schedule: every +4 levels (5★: +4,+8,+12,+16,+20 → 5 upgrades; 4★: +4,+8,+12,+16 → 4 upgrades)
     const maxLevel = rarity === 5 ? 20 : 16;

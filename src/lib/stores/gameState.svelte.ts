@@ -96,6 +96,10 @@ export interface SimState {
     // entirely and results are pushed straight to history. Persisted so the
     // user's choice survives reloads.
     skipAnimation: boolean;
+    // Redeemed codes — tracks which redeem codes have been claimed so the
+    // user can't farm infinite primogems by clicking Redeem repeatedly.
+    // Stored as an array (not Set) for JSON serialization.
+    redeemedCodes: string[];
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -220,7 +224,8 @@ function loadState(): SimState {
             wishMode: (parsed.wishMode === 'standard' || parsed.wishMode === 'novice') ? parsed.wishMode : 'character',
             novicePullsUsed: typeof parsed.novicePullsUsed === 'number' && Number.isFinite(parsed.novicePullsUsed) ? Math.max(0, Math.min(NOVICE_MAX_PULLS, Math.floor(parsed.novicePullsUsed))) : 0,
             noviceFirstTenUsed: parsed.noviceFirstTenUsed === true,
-            skipAnimation: parsed.skipAnimation === true
+            skipAnimation: parsed.skipAnimation === true,
+            redeemedCodes: Array.isArray(parsed.redeemedCodes) ? parsed.redeemedCodes.filter((c: unknown) => typeof c === 'string') : []
         };
     } catch (err) {
         console.error('[gameState] Failed to load state, resetting:', err);
@@ -247,7 +252,8 @@ function createInitialSimState(): SimState {
         wishMode: 'character',
         novicePullsUsed: 0,
         noviceFirstTenUsed: false,
-        skipAnimation: false
+        skipAnimation: false,
+        redeemedCodes: []
     };
 }
 
@@ -289,6 +295,7 @@ $effect.root(() => {
         void simState.novicePullsUsed;
         void simState.noviceFirstTenUsed;
         void simState.skipAnimation;
+        void simState.redeemedCodes.length;
         void simState.wishHistory.length;
 
         // Debounce: collapse rapid successive mutations into one localStorage write
@@ -412,6 +419,22 @@ function setSkipAnimation(value: boolean): void {
     simState.skipAnimation = value;
 }
 
+// ── Redeem code tracking ────────────────────────────────────────────────────
+// Prevents farming infinite primogems by clicking Redeem on the same code
+// repeatedly. Codes are case-insensitive (normalized to uppercase) so 'ABC'
+// and 'abc' are treated as the same code.
+function isRedeemed(code: string): boolean {
+    const normalized = code.trim().toUpperCase();
+    return simState.redeemedCodes.includes(normalized);
+}
+
+function markRedeemed(code: string): void {
+    const normalized = code.trim().toUpperCase();
+    if (!simState.redeemedCodes.includes(normalized)) {
+        simState.redeemedCodes = [...simState.redeemedCodes, normalized];
+    }
+}
+
 function resetAll(): void {
     simState.primogem = DEFAULT_PRIMOGEM;
     simState.modes = createInitialModes();
@@ -422,6 +445,7 @@ function resetAll(): void {
     simState.novicePullsUsed = 0;
     simState.noviceFirstTenUsed = false;
     simState.skipAnimation = false;
+    simState.redeemedCodes = [];
 }
 
 function resetHistoryOnly(): void {
@@ -770,6 +794,7 @@ export function getGameState() {
         get novicePullsUsed() { return simState.novicePullsUsed; },
         get noviceFirstTenUsed() { return simState.noviceFirstTenUsed; },
         get skipAnimation() { return simState.skipAnimation; },
+        get redeemedCodes() { return simState.redeemedCodes; },
 
         // ── Constants ──
         COST_SINGLE,
@@ -804,6 +829,10 @@ export function getGameState() {
         // Mode + animation preferences
         setWishMode,
         setSkipAnimation,
+
+        // ── Redeem code tracking ──
+        isRedeemed,
+        markRedeemed,
 
         resetAll,
         resetHistoryOnly,
