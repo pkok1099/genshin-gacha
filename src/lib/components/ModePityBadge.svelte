@@ -40,6 +40,55 @@
                 if (p >= 60) return 'text-[#E0B25A]';
                 return 'text-[#F2E6D0]';
         }
+
+        // ── Flash highlight on pity change ──────────────────────────────────────
+        // When a pull advances pity (or resets it on a 5★/4★ drop), the affected
+        // row's pity counter briefly flashes gold so the user gets visual feedback
+        // that "this banner's pity just changed" — useful after a multi-pull on
+        // one banner to confirm the OTHER banners' pity didn't move.
+        //
+        // We track a per-mode, per-rarity flash flag. The $effect watches each
+        // mode's pity5/pity4 reactively; when a value changes it sets the flag
+        // and schedules a clear. The flash class is applied to the counter span
+        // and drives a CSS keyframe (defined in app.css).
+        let flash5: Record<WishMode, boolean> = $state({ character: false, standard: false, novice: false });
+        let flash4: Record<WishMode, boolean> = $state({ character: false, standard: false, novice: false });
+        const flashTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+
+        function triggerFlash(kind: '5' | '4', mode: WishMode) {
+                const key = `${mode}-${kind}`;
+                if (kind === '5') flash5[mode] = true;
+                else flash4[mode] = true;
+                if (flashTimers[key]) clearTimeout(flashTimers[key]);
+                flashTimers[key] = setTimeout(() => {
+                        if (kind === '5') flash5[mode] = false;
+                        else flash4[mode] = false;
+                }, 900);
+        }
+
+        // Watch each mode's pity values. We use a single $effect that reads all
+        // six values so Svelte re-runs the effect whenever any of them changes;
+        // we then diff against the previous snapshot to decide which one(s) to
+        // flash. Using a single effect avoids six separate effects.
+        let prevPity: Record<WishMode, { p5: number; p4: number }> = {
+                character: { p5: pity5Of('character'), p4: pity4Of('character') },
+                standard: { p5: pity5Of('standard'), p4: pity4Of('standard') },
+                novice: { p5: pity5Of('novice'), p4: pity4Of('novice') }
+        };
+
+        $effect(() => {
+                // Read current values (this is what makes the effect reactive).
+                const cur = {
+                        character: { p5: pity5Of('character'), p4: pity4Of('character') },
+                        standard: { p5: pity5Of('standard'), p4: pity4Of('standard') },
+                        novice: { p5: pity5Of('novice'), p4: pity4Of('novice') }
+                };
+                (Object.keys(cur) as WishMode[]).forEach((mode) => {
+                        if (cur[mode].p5 !== prevPity[mode].p5) triggerFlash('5', mode);
+                        if (cur[mode].p4 !== prevPity[mode].p4) triggerFlash('4', mode);
+                });
+                prevPity = cur;
+        });
 </script>
 
 <div class="bg-[#1A2337]/80 backdrop-blur-sm p-4 rounded-xl border border-[#C9A45A]/20 shadow-xl space-y-3">
@@ -81,7 +130,7 @@
                                                         style="width: {Math.min((p5 / 90) * 100, 100)}%; background: {p5 >= 73 ? 'linear-gradient(to right, #E8745A, #FF8B5A)' : p5 >= 60 ? 'linear-gradient(to right, #E0B25A, #E6C77A)' : 'linear-gradient(to right, #C9A45A, #E6C77A)'}"
                                                 ></div>
                                         </div>
-                                        <span class="text-[10px] font-mono font-bold tabular-nums w-10 text-right {pity5Class(m.mode)}">
+                                        <span class="text-[10px] font-mono font-bold tabular-nums w-10 text-right {pity5Class(m.mode)} {flash5[m.mode] ? 'pity-flash' : ''}">
                                                 {p5}/90
                                         </span>
                                 </div>
@@ -95,7 +144,7 @@
                                                         style="width: {Math.min((p4 / 10) * 100, 100)}%"
                                                 ></div>
                                         </div>
-                                        <span class="text-[10px] font-mono font-bold tabular-nums text-[#F2E6D0] w-8 text-right">{p4}/10</span>
+                                        <span class="text-[10px] font-mono font-bold tabular-nums text-[#F2E6D0] w-8 text-right {flash4[m.mode] ? 'pity-flash' : ''}">{p4}/10</span>
                                 </div>
 
                                 <!-- Guaranteed indicator (Character only) -->

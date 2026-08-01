@@ -258,6 +258,20 @@ body::after {
 .el-cryo    { color: #7DCBE0; }
 .el-geo     { color: #E0B25A; }
 
+/* Pity counter flash — applied to a pity counter span for ~900ms after the
+   underlying value changes (see ModePityBadge.svelte). Pulses a gold ring +
+   scale-up so the user notices which banner's pity just moved, even when
+   looking at a different banner's row. */
+.pity-flash {
+        animation: pity-flash-anim 0.9s ease-out;
+}
+@keyframes pity-flash-anim {
+        0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(230, 199, 122, 0); }
+        20%  { transform: scale(1.35); box-shadow: 0 0 0 4px rgba(230, 199, 122, 0.55); }
+        60%  { transform: scale(1.15); box-shadow: 0 0 0 2px rgba(230, 199, 122, 0.25); }
+        100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(230, 199, 122, 0); }
+}
+
 /* Rarity text */
 .text-rarity-5 { color: var(--color-rarity-5-bright); }
 .text-rarity-4 { color: var(--color-rarity-4-bright); }
