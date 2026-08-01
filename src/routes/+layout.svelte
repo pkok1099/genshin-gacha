@@ -30,7 +30,8 @@
                 { href: '/calculator', key: 'nav.calculator', icon: '◈' },
                 { href: '/history',    key: 'nav.history',    icon: '☰' },
                 { href: '/pity-setup', key: 'nav.pity-setup', icon: '⚙' },
-                { href: '/redeem',     key: 'nav.redeem',     icon: '✉' }
+                { href: '/redeem',     key: 'nav.redeem',     icon: '✉' },
+                { href: '/settings',   key: 'nav.settings',   icon: '♪' }
         ];
 
         const rngSubItems: { href: string; key: string; icon: string; category: string }[] = [

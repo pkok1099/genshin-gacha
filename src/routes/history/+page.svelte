@@ -6,6 +6,7 @@
         import LuckChart from '$lib/components/LuckChart.svelte';
         import BannerSummary from '$lib/components/BannerSummary.svelte';
         import LuckComparison from '$lib/components/LuckComparison.svelte';
+        import PityHeatmap from '$lib/components/PityHeatmap.svelte';
         import AchievementTracker from '$lib/components/AchievementTracker.svelte';
         import ThemedModal from '$lib/components/ThemedModal.svelte';
         import { fade, fly } from 'svelte/transition';
@@ -257,6 +258,11 @@
                 <section>
                         <h2 class="font-heading text-xl font-semibold text-[#F2E6D0] mb-3">{t('history.section.distribution')}</h2>
                         <LuckChart history={filteredHistory} {stats} />
+                </section>
+
+                <!-- ═══ Pity Heatmap ═══ -->
+                <section>
+                        <PityHeatmap />
                 </section>
 
                 <!-- ═══ Luck Comparison (per-banner) ═══ -->
