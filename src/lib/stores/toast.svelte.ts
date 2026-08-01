@@ -25,7 +25,16 @@ export interface ToastEntry {
 }
 
 let toasts: ToastEntry[] = $state([]);
-let nextId = 1;
+// Seed nextId with Date.now() so it doesn't collide across HMR boundaries
+// (module re-execution resets the counter, but pending setTimeout closures
+// from the previous module instance still reference the old `dismiss`).
+// Using a high base also makes IDs visually distinguishable from small
+// sequential integers in devtools.
+let nextId = Date.now();
+// Track pending timer handles so we can clear them on dismiss/clear —
+// prevents leaked timeouts if a toast is dismissed manually before its
+// auto-dismiss fires.
+const pendingTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 function push(kind: ToastKind, title: string, message?: string, duration?: number): number {
         // Default durations: success 3s, info 3.5s, warning 4s, error 5s.
@@ -48,16 +57,32 @@ function push(kind: ToastKind, title: string, message?: string, duration?: numbe
         toasts = [...toasts, entry];
 
         if (dur > 0) {
-                setTimeout(() => dismiss(id), dur);
+                const timer = setTimeout(() => {
+                        pendingTimers.delete(id);
+                        dismiss(id);
+                }, dur);
+                pendingTimers.set(id, timer);
         }
         return id;
 }
 
 function dismiss(id: number): void {
+        // Clear any pending auto-dismiss timer so it doesn't fire on an
+        // already-removed toast (no-op but avoids a wasted filter pass).
+        const timer = pendingTimers.get(id);
+        if (timer) {
+                clearTimeout(timer);
+                pendingTimers.delete(id);
+        }
         toasts = toasts.filter((t) => t.id !== id);
 }
 
 function clear(): void {
+        // Clear all pending timers before wiping the array.
+        for (const timer of pendingTimers.values()) {
+                clearTimeout(timer);
+        }
+        pendingTimers.clear();
         toasts = [];
 }
 

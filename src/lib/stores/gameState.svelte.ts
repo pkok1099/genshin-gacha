@@ -55,6 +55,14 @@ export interface WishResult {
     isGuaranteed: boolean;
     bannerId: string;
     timestamp: number;
+    // Monotonically increasing batch ID — incremented once per doSinglePull
+    // (batch of 1) or doTenPull (batch of 10). Used by the achievement
+    // detector to unambiguously group pulls that came from the same wish
+    // action, without relying on timestamp proximity (which produces false
+    // positives for rapid singles and false negatives for back-to-back
+    // 10-pulls within 5s of each other). Optional for backwards-compat with
+    // imported histories that predate the field.
+    batchId?: number;
 }
 
 export type WishMode = 'character' | 'standard' | 'novice';
@@ -140,8 +148,8 @@ function isBrowser(): boolean {
 // are written into `modes.character.*` because the previous default wishMode
 // was 'character' and all pulls shared that single counter.
 function migrateLegacy(parsed: any): Partial<SimState> {
-    // Already v2 — no migration needed
-    if (parsed && parsed.modes && typeof parsed.modes === 'object') {
+    // Already v2 — no migration needed, but verify modes shape.
+    if (parsed && parsed.modes && typeof parsed.modes === 'object' && !Array.isArray(parsed.modes)) {
         return parsed as Partial<SimState>;
     }
 
@@ -155,14 +163,42 @@ function migrateLegacy(parsed: any): Partial<SimState> {
     // the safest default for a counter they never explicitly set.
     const modes = createInitialModes();
     if (parsed) {
-        modes.character.pity5 = typeof parsed.pity5 === 'number' ? parsed.pity5 : 0;
-        modes.character.pity4 = typeof parsed.pity4 === 'number' ? parsed.pity4 : 0;
-        modes.character.guaranteed5 = parsed.guaranteed5 ?? false;
-        modes.character.guaranteed4 = parsed.guaranteed4 ?? false;
-        modes.character.pityLock5 = parsed.pityLock5 ?? null;
-        modes.character.pityLock4 = parsed.pityLock4 ?? null;
+        modes.character.pity5 = typeof parsed.pity5 === 'number' && Number.isFinite(parsed.pity5) ? parsed.pity5 : 0;
+        modes.character.pity4 = typeof parsed.pity4 === 'number' && Number.isFinite(parsed.pity4) ? parsed.pity4 : 0;
+        modes.character.guaranteed5 = parsed.guaranteed5 === true;
+        modes.character.guaranteed4 = parsed.guaranteed4 === true;
+        modes.character.pityLock5 = (typeof parsed.pityLock5 === 'number' && Number.isFinite(parsed.pityLock5)) ? parsed.pityLock5 : null;
+        modes.character.pityLock4 = (typeof parsed.pityLock4 === 'number' && Number.isFinite(parsed.pityLock4)) ? parsed.pityLock4 : null;
     }
     return { ...parsed, modes };
+}
+
+// Coerce a raw mode pity object (from localStorage or import) into a valid
+// ModePity. Non-number / non-finite values fall back to 0; out-of-range
+// pity5/pity4 are clamped to their valid ranges. This defends against
+// hand-edited localStorage or corrupted imports that would otherwise
+// produce NaN in the gacha engine (e.g. pity5 = "high" → "high1" string
+// concat → get5StarRate(NaN) → no 5★ ever drops, silently broken).
+function coerceModePity(raw: unknown): ModePity {
+    const base = createEmptyModePity();
+    if (!raw || typeof raw !== 'object') return base;
+    const r = raw as Partial<ModePity>;
+    const num = (v: unknown, min: number, max: number): number => {
+        if (typeof v !== 'number' || !Number.isFinite(v)) return 0;
+        return Math.max(min, Math.min(max, Math.floor(v)));
+    };
+    const nullableNum = (v: unknown, min: number, max: number): number | null => {
+        if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+        return Math.max(min, Math.min(max, Math.floor(v)));
+    };
+    return {
+        pity5: num(r.pity5, 0, 89),
+        pity4: num(r.pity4, 0, 9),
+        guaranteed5: r.guaranteed5 === true,
+        guaranteed4: r.guaranteed4 === true,
+        pityLock5: nullableNum(r.pityLock5, 0, 89),
+        pityLock4: nullableNum(r.pityLock4, 0, 9)
+    };
 }
 
 function loadState(): SimState {
@@ -172,19 +208,19 @@ function loadState(): SimState {
         if (!raw) return createInitialSimState();
         const parsed = migrateLegacy(JSON.parse(raw));
         return {
-            primogem: typeof parsed.primogem === 'number' ? parsed.primogem : DEFAULT_PRIMOGEM,
+            primogem: typeof parsed.primogem === 'number' && Number.isFinite(parsed.primogem) ? Math.max(0, Math.floor(parsed.primogem)) : DEFAULT_PRIMOGEM,
             modes: {
-                character: { ...createEmptyModePity(), ...(parsed.modes?.character ?? {}) },
-                standard: { ...createEmptyModePity(), ...(parsed.modes?.standard ?? {}) },
-                novice: { ...createEmptyModePity(), ...(parsed.modes?.novice ?? {}) }
+                character: coerceModePity(parsed.modes?.character),
+                standard:  coerceModePity(parsed.modes?.standard),
+                novice:    coerceModePity(parsed.modes?.novice)
             },
             wishHistory: Array.isArray(parsed.wishHistory) ? parsed.wishHistory : [],
-            totalWishes: parsed.totalWishes ?? 0,
-            selectedBannerId: parsed.selectedBannerId ?? '',
+            totalWishes: typeof parsed.totalWishes === 'number' && Number.isFinite(parsed.totalWishes) ? Math.max(0, Math.floor(parsed.totalWishes)) : 0,
+            selectedBannerId: typeof parsed.selectedBannerId === 'string' ? parsed.selectedBannerId : '',
             wishMode: (parsed.wishMode === 'standard' || parsed.wishMode === 'novice') ? parsed.wishMode : 'character',
-            novicePullsUsed: parsed.novicePullsUsed ?? 0,
-            noviceFirstTenUsed: parsed.noviceFirstTenUsed ?? false,
-            skipAnimation: parsed.skipAnimation ?? false
+            novicePullsUsed: typeof parsed.novicePullsUsed === 'number' && Number.isFinite(parsed.novicePullsUsed) ? Math.max(0, Math.min(NOVICE_MAX_PULLS, Math.floor(parsed.novicePullsUsed))) : 0,
+            noviceFirstTenUsed: parsed.noviceFirstTenUsed === true,
+            skipAnimation: parsed.skipAnimation === true
         };
     } catch (err) {
         console.error('[gameState] Failed to load state, resetting:', err);
@@ -425,26 +461,35 @@ function importHistory(envelope: unknown): number {
     const rawHistory: unknown = Array.isArray(envelope) ? envelope : env.history;
     if (!Array.isArray(rawHistory)) return 0;
 
+    // Phase 1: validate + coerce each entry. Skip malformed entries rather
+    // than aborting the whole import.
     const valid: WishResult[] = [];
+    const seenIds = new Set<string>();
     for (const entry of rawHistory) {
         if (!entry || typeof entry !== 'object') continue;
         const e = entry as Partial<WishResult>;
-        // Minimal shape check — pullNumber + totalWishes are recomputed below
-        // so we don't require them to be present in the import.
+        // Minimal shape check — pullNumber is recomputed below so we don't
+        // require it to be present in the import.
         if (typeof e.id !== 'string' || typeof e.name !== 'string' ||
-            typeof e.rarity !== 'number' || typeof e.timestamp !== 'number') {
+            typeof e.rarity !== 'number' || typeof e.timestamp !== 'number' ||
+            !Number.isFinite(e.timestamp)) {
             continue;
         }
+        // Deduplicate by ID — keep the first occurrence. Duplicate IDs would
+        // break Svelte's keyed {#each} loops and cause render warnings.
+        if (seenIds.has(e.id)) continue;
+        seenIds.add(e.id);
+
         valid.push({
             id: e.id,
-            pullNumber: typeof e.pullNumber === 'number' ? e.pullNumber : valid.length + 1,
+            pullNumber: 0,  // recomputed after sort
             name: e.name,
             type: e.type === 'weapon' ? 'weapon' : 'character',
             rarity: (e.rarity === 5 || e.rarity === 4 || e.rarity === 3) ? e.rarity : 3,
             element: typeof e.element === 'string' ? e.element : undefined,
             icon: typeof e.icon === 'string' ? e.icon : '',
             fallbackIcon: typeof e.fallbackIcon === 'string' ? e.fallbackIcon : undefined,
-            pityCount: typeof e.pityCount === 'number' ? e.pityCount : 0,
+            pityCount: typeof e.pityCount === 'number' && Number.isFinite(e.pityCount) ? e.pityCount : 0,
             is5050Win: typeof e.is5050Win === 'boolean' ? e.is5050Win : undefined,
             isRateUp: typeof e.isRateUp === 'boolean' ? e.isRateUp : false,
             isGuaranteed: typeof e.isGuaranteed === 'boolean' ? e.isGuaranteed : false,
@@ -455,33 +500,56 @@ function importHistory(envelope: unknown): number {
 
     if (valid.length === 0) return 0;
 
+    // Phase 2: sort chronologically (oldest first). Out-of-order timestamps
+    // would corrupt StreakTracker and the achievement batch detector, both of
+    // which assume ascending order. Ties keep insertion order (stable sort).
+    valid.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Phase 3: recompute pullNumber sequentially so it's monotonic and
+    // matches the new totalWishes. This also fixes any gaps from the source.
+    valid.forEach((entry, i) => {
+        entry.pullNumber = i + 1;
+    });
+
     // Replace history entirely + recompute totalWishes from the new array.
     simState.wishHistory = valid;
     simState.totalWishes = valid.length;
     return valid.length;
 }
 
+// Module-level batch counter — incremented once per pushResultsToHistory call
+// (i.e. once per doSinglePull / doTenPull). All entries from the same call
+// share the same batchId, which the achievement detector uses to group
+// pulls unambiguously (vs timestamp proximity which is unreliable).
+let nextBatchId = 1;
+
 function pushResultsToHistory(results: PullResult[], bannerId: string): WishResult[] {
-    const newEntries: WishResult[] = results.map((r) => {
-        const entry: WishResult = {
-            id: `${r.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            pullNumber: simState.totalWishes + 1,
-            name: r.name,
-            type: r.type,
-            rarity: r.rarity,
-            element: r.element,
-            icon: r.iconUrl,
-            fallbackIcon: r.bannerIconUrl,
-            pityCount: r.pityAtPull,
-            is5050Win: r.rarity === 5 ? r.isRateUp : undefined,
-            isRateUp: r.isRateUp,
-            isGuaranteed: r.isGuaranteed,
-            bannerId,
-            timestamp: Date.now()
-        };
-        simState.totalWishes += 1;
-        return entry;
-    });
+    // Hoist Date.now() + batchId out of the map so all entries in this batch
+    // share the same timestamp prefix (useful for debugging) and batch ID.
+    // pullNumber is computed from the index so we don't mutate simState inside
+    // the map (cleaner, and avoids the side-effect-in-map fragility flagged
+    // in the audit — M1).
+    const now = Date.now();
+    const batchId = nextBatchId++;
+    const startPullNumber = simState.totalWishes + 1;
+    const newEntries: WishResult[] = results.map((r, i) => ({
+        id: `${r.id}-${now}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+        pullNumber: startPullNumber + i,
+        name: r.name,
+        type: r.type,
+        rarity: r.rarity,
+        element: r.element,
+        icon: r.iconUrl,
+        fallbackIcon: r.bannerIconUrl,
+        pityCount: r.pityAtPull,
+        is5050Win: r.rarity === 5 ? r.isRateUp : undefined,
+        isRateUp: r.isRateUp,
+        isGuaranteed: r.isGuaranteed,
+        bannerId,
+        timestamp: now,
+        batchId
+    }));
+    simState.totalWishes += newEntries.length;
     simState.wishHistory = [...simState.wishHistory, ...newEntries];
     return newEntries;
 }
@@ -578,7 +646,7 @@ function doSinglePull(): PullOutcome {
     const m = activeMode();
     m.guaranteed5 = newState.guaranteed5;
     m.guaranteed4 = newState.guaranteed4;
-    simState.novicePullsUsed += 1;
+    simState.novicePullsUsed = Math.min(NOVICE_MAX_PULLS, simState.novicePullsUsed + 1);
 
     const wishes = pushResultsToHistory([result], 'novice');
     return { ok: true, result, wish: wishes[0] };
@@ -619,8 +687,11 @@ function doTenPull(): TenPullOutcome {
         return { ok: true, results, wishes };
     }
 
-    // Novice wish
-    if (simState.novicePullsUsed >= NOVICE_MAX_PULLS) return { ok: false, reason: 'novice_maxed' };
+    // Novice wish — guard against exceeding the 20-pull cap. A 10-pull is only
+    // allowed if there's room for all 10 (novicePullsUsed + 10 <= 20). This
+    // matches the wish-page canTen guard; the duplicate check here defends
+    // against any caller that bypasses the UI (e.g. keyboard shortcut races).
+    if (simState.novicePullsUsed + 10 > NOVICE_MAX_PULLS) return { ok: false, reason: 'novice_maxed' };
     if (!canAfford(NOVICE_COST_TEN)) return { ok: false, reason: 'insufficient_primo' };
 
     const gachaState = snapshotGachaState();
@@ -669,7 +740,7 @@ function doTenPull(): TenPullOutcome {
     const m = activeMode();
     m.guaranteed5 = newState.guaranteed5;
     m.guaranteed4 = newState.guaranteed4;
-    simState.novicePullsUsed += 10;
+    simState.novicePullsUsed = Math.min(NOVICE_MAX_PULLS, simState.novicePullsUsed + 10);
 
     const wishes = pushResultsToHistory(results, 'novice');
     return { ok: true, results, wishes };

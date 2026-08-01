@@ -46,28 +46,49 @@ export function computeAchievementStats(history: WishResult[], noviceMaxed: bool
         let pulledFeatured5 = false;
         let sinceLast5 = 0;
 
-        // Detect "all 3★ 10-pull" — group consecutive entries by timestamp
-        // proximity (within 5s = same batch), check if any batch of 10 has
-        // zero 5★ AND zero 4★.
+        // Detect "all 3★ 10-pull" — group entries by batchId (assigned in
+        // pushResultsToHistory). This is unambiguous: a batch of exactly 10
+        // entries where every rarity is 3 means a 10-pull with no 4★ or 5★.
+        // Falls back to timestamp-proximity grouping for imported histories
+        // that predate the batchId field (legacy data).
         let pulledAll3star10 = false;
         if (history.length >= 10) {
+                const hasBatchIds = history.some(w => typeof w.batchId === 'number');
                 const batches: WishResult[][] = [];
-                let currentBatch: WishResult[] = [];
-                for (let i = 0; i < history.length; i++) {
-                        const w = history[i];
-                        if (currentBatch.length === 0) {
-                                currentBatch.push(w);
-                        } else {
-                                const prev = currentBatch[currentBatch.length - 1];
-                                if (Math.abs(w.timestamp - prev.timestamp) <= 5000) {
-                                        currentBatch.push(w);
-                                } else {
-                                        batches.push(currentBatch);
+                if (hasBatchIds) {
+                        // Group by batchId — consecutive entries with the same batchId
+                        // belong to the same wish action.
+                        let currentId: number | undefined;
+                        let currentBatch: WishResult[] = [];
+                        for (const w of history) {
+                                if (w.batchId !== currentId) {
+                                        if (currentBatch.length > 0) batches.push(currentBatch);
                                         currentBatch = [w];
+                                        currentId = w.batchId;
+                                } else {
+                                        currentBatch.push(w);
                                 }
                         }
+                        if (currentBatch.length > 0) batches.push(currentBatch);
+                } else {
+                        // Legacy fallback: timestamp proximity (≤5s = same batch).
+                        let currentBatch: WishResult[] = [];
+                        for (let i = 0; i < history.length; i++) {
+                                const w = history[i];
+                                if (currentBatch.length === 0) {
+                                        currentBatch.push(w);
+                                } else {
+                                        const prev = currentBatch[currentBatch.length - 1];
+                                        if (Math.abs(w.timestamp - prev.timestamp) <= 5000) {
+                                                currentBatch.push(w);
+                                        } else {
+                                                batches.push(currentBatch);
+                                                currentBatch = [w];
+                                        }
+                                }
+                        }
+                        if (currentBatch.length > 0) batches.push(currentBatch);
                 }
-                if (currentBatch.length > 0) batches.push(currentBatch);
                 pulledAll3star10 = batches.some(b =>
                         b.length === 10 && b.every(r => r.rarity === 3)
                 );

@@ -62,11 +62,14 @@
         let earlyPercent = $derived(total5Stars > 0 ? Math.round((earlyDrops / total5Stars) * 100) : 0);
         let softPityPercent = $derived(total5Stars > 0 ? Math.round((softPityDrops / total5Stars) * 100) : 0);
 
-        // Average pity at drop
+        // Average pity at drop — clamp pityCount to 89 to match the bucket
+        // clamping (a pityCount of 90 is hard pity, which lands in the "80+"
+        // bucket; using 90 for the average would skew it upward for users
+        // who hit hard pity).
         function computeAvgPity(): number {
                 const fiveStars = game.wishHistory.filter((r) => r.rarity === 5);
                 if (fiveStars.length === 0) return 0;
-                return Math.round(fiveStars.reduce((s: number, w: WishResult) => s + Math.min(w.pityCount, 90), 0) / fiveStars.length);
+                return Math.round(fiveStars.reduce((s: number, w: WishResult) => s + Math.min(w.pityCount, 89), 0) / fiveStars.length);
         }
         let avgPity = $derived(computeAvgPity());
 

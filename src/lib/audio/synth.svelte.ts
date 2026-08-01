@@ -224,11 +224,6 @@ export function toggleSound(): boolean {
 // These are separate from the master `enabled` flag so users can fine-tune
 // which sounds they want without disabling audio entirely.
 
-export function getSoundSettings(): SoundSettings {
-        // Return a copy so callers can't mutate the internal state directly.
-        return { volume: settings.volume, muted: { ...settings.muted } };
-}
-
 export function setSoundVolume(volume: number): void {
         settings.volume = Math.max(0, Math.min(1, volume));
         persistSettings();

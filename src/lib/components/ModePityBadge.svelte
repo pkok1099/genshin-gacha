@@ -88,6 +88,13 @@
                         if (cur[mode].p4 !== prevPity[mode].p4) triggerFlash('4', mode);
                 });
                 prevPity = cur;
+
+                // Cleanup: clear any pending flash timers on unmount so they
+                // don't fire writes to orphaned $state (harmless in Svelte 5
+                // but leaks the timer handles).
+                return () => {
+                        for (const t of Object.values(flashTimers)) clearTimeout(t);
+                };
         });
 </script>
 

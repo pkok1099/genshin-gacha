@@ -69,6 +69,10 @@
                         }
                         rate = Math.min(rate, 1);
                         pNoFive *= (1 - rate);
+                        // Short-circuit: once pNoFive hits 0, the result is locked
+                        // at 1.0 (guaranteed). Continuing the loop is wasted work
+                        // for users with large primogem balances (625+ pulls).
+                        if (pNoFive === 0) break;
                 }
                 return 1 - pNoFive;
         }

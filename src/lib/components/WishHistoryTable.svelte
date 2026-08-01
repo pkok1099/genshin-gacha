@@ -106,7 +106,10 @@
                                         </tr>
                                 </thead>
                                 <tbody>
-                                        {#each [...filtered].reverse().slice(0, 500) as item (item.id)}
+                                        <!-- slice(-500).reverse() = O(500) instead of O(n). Shows the 500
+                                             most recent entries; older entries are still counted in the
+                                             tab badges above (which reflect the FULL filtered history). -->
+                                        {#each filtered.slice(-500).reverse() as item (item.id)}
                                                 <tr class="border-b border-[#24314A]/40 transition-colors {rowClass(item.rarity)}">
                                                         <td class="px-3 py-2 font-mono text-[10px] text-[#8E97AA] tabular-nums">{item.pullNumber}</td>
                                                         {#if !compact}
@@ -157,6 +160,11 @@
                                         {/each}
                                 </tbody>
                         </table>
+                        {#if filtered.length > 500}
+                                <div class="text-center text-[10px] text-[#8E97AA] py-2 border-t border-[#24314A] italic">
+                                        Menampilkan 500 pull terbaru dari {filtered.length} total. Pull lebih lama tidak ditampilkan di tabel.
+                                </div>
+                        {/if}
                 {/if}
         </div>
 </div>

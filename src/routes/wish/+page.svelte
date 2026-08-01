@@ -34,6 +34,25 @@
                 }
         });
 
+        // Surface banner API failures as a toast so the user knows the live
+        // API is down (a fallback banner is used silently otherwise — the user
+        // would see a generic banner with no indication anything went wrong).
+        // Dismissible; only fires once per failure (tracked via a ref so the
+        // effect doesn't re-fire on unrelated reactive changes).
+        let lastApiError = '';
+        $effect(() => {
+                const err = banners.apiError;
+                if (err && err !== lastApiError) {
+                        lastApiError = err;
+                        toast.warning(
+                                'Banner API Offline',
+                                `${err}. Using fallback banner — kamu masih bisa wish.`
+                        );
+                } else if (!err) {
+                        lastApiError = '';
+                }
+        });
+
         // Reset splash error when switching modes
         $effect(() => {
                 void game.wishMode;
@@ -149,12 +168,22 @@
         let canSingle = $derived(
                 game.primogem >= game.COST_SINGLE &&
                 (game.wishMode !== 'character' || banners.currentBanner !== null) &&
-                (game.wishMode !== 'novice' || game.novicePullsUsed < game.NOVICE_MAX_PULLS)
+                // Novice Wish in the real game only allows 10-pulls (Beginner's
+                // Wish has no single-pull option). We mirror that here so that:
+                //   1. Users can't do 20 singles and finish the banner without
+                //      ever receiving the guaranteed Noelle (which only fires
+                //      on the first 10-pull).
+                //   2. The 20-pull cap stays clean (10-pulls only → exactly 2
+                //      10-pulls to finish, no remainder).
+                game.wishMode !== 'novice'
         );
         let canTen = $derived(
                 game.primogem >= (game.wishMode === 'novice' ? game.NOVICE_COST_TEN : game.COST_TEN) &&
                 (game.wishMode !== 'character' || banners.currentBanner !== null) &&
-                (game.wishMode !== 'novice' || game.novicePullsUsed < game.NOVICE_MAX_PULLS)
+                // Novice: a 10-pull must not push novicePullsUsed past the 20 cap.
+                // Singles are allowed up to 19 (the 20th single completes the banner),
+                // but 10-pull requires novicePullsUsed + 10 <= 20, i.e. <= 10 used.
+                (game.wishMode !== 'novice' || game.novicePullsUsed + 10 <= game.NOVICE_MAX_PULLS)
         );
 
         let tenPullCost = $derived(game.wishMode === 'novice' ? game.NOVICE_COST_TEN : game.COST_TEN);
