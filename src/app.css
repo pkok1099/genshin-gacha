@@ -150,10 +150,16 @@ body::after {
         100% { background-position: -100% 0; }
 }
 
-/* Purple glow pulse (4★) — opacity on box-shadow color via pseudo-element so
-   only the compositor repaints, not layout. */
+/* Purple glow pulse (4★) — box-shadow animation only, no layout impact.
+   ⚠️ Do NOT add `position: relative` here. When `.purple-glow` is applied
+   to an element that also has Tailwind's `.absolute` (e.g. the ResultCard
+   front face), the cascade order makes `.purple-glow` win and override
+   `position: absolute` → `position: relative`. The face then collapses to
+   content-height, image area (`h-[65%]`) resolves to 0, and the 4★ wish
+   card renders without its image. The other rarity glow classes
+   (`.gold-glow`, `.blue-accent`) do NOT set `position`, which is why only
+   4★ cards were affected. */
 .purple-glow {
-        position: relative;
         box-shadow:
                 0 0 24px rgba(180, 149, 240, 0.35),
                 0 0 60px rgba(141, 114, 201, 0.2);
