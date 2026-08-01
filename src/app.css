@@ -221,10 +221,27 @@ body::after {
         100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }
 
-/* 3D card flip helpers — preserve-3d + backface-hidden is the GPU-cheap path. */
+/* 3D card flip helpers — preserve-3d + backface-hidden is the GPU-cheap path.
+   ⚠️ Do NOT combine `.gpu-layer` with these on the same element: `.gpu-layer`
+   sets `backface-visibility: hidden` on the *parent* (the rotated container),
+   which on Chromium breaks child face rendering — the back face stays visible
+   and the front face stays hidden after flip. Use `.flip-container` instead. */
 .flip-3d { transform-style: preserve-3d; }
 .flip-backface { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-rotate-y { transform: rotateY(180deg); }
+
+/* Flip container — promotes its own compositor layer WITHOUT setting
+   `backface-visibility: hidden` (which would break child face visibility on
+   Chromium). Combines `translateZ(0)` with the flip rotation so the layer
+   is preserved in both states and the transition doesn't collapse to a
+   degenerate matrix mid-animation. */
+.flip-container {
+        will-change: transform;
+        transform: translateZ(0);
+}
+.flip-container.is-flipped {
+        transform: rotateY(180deg) translateZ(0);
+}
 
 /* Element color tokens (utility) */
 .el-pyro    { color: #E8745A; }

@@ -15,6 +15,7 @@
 
         let isFlipped: boolean = $state(false);
         let imgLoaded: boolean = $state(false);
+        let imgFailed: boolean = $state(false);
 
         // ── 3-tier image fallback chain ──────────────────────────────────────────
         // Order: HoYoverse CDN (official, always current) → jmp.blue (community) → SVG
@@ -51,6 +52,7 @@
         $effect(() => {
                 // Reset image state when result changes (defensive — keyed each should remount)
                 imgLoaded = false;
+                imgFailed = false;
                 currentSrcIdx = 0;
         });
 
@@ -59,10 +61,17 @@
                 // Try next source in the chain
                 if (currentSrcIdx < iconSources.length - 1) {
                         currentSrcIdx += 1;
+                        // imgLoaded stays false — shimmer placeholder remains visible
+                        // while the next source loads.
                 } else {
-                        // Exhausted all sources — use SVG fallback permanently
-                        img.src = svgFallback;
+                        // Exhausted all sources — use SVG fallback permanently.
+                        // Update the reactive source so Svelte controls the DOM
+                        // (avoids drift between derived `currentSrc` and manual `img.src`).
+                        currentSrcIdx = iconSources.length; // out-of-range → derived falls back to svgFallback
+                        imgFailed = true;
                         imgLoaded = true;
+                        // Belt-and-suspenders: also set directly in case derived hasn't propagated.
+                        img.src = svgFallback;
                 }
         }
 
@@ -126,7 +135,14 @@
         onclick={() => { isFlipped = !isFlipped; playCardFlip(); }}
         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); isFlipped = !isFlipped; } }}
 >
-        <div class="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flip-3d gpu-layer {isFlipped ? 'flip-rotate-y' : ''}">
+        <!-- Flip container — `.flip-container` (NOT `.gpu-layer`) because
+             `.gpu-layer` sets `backface-visibility: hidden` on this rotating
+             parent, which on Chromium makes the back face stay visible and the
+             front face stay hidden after flip. `.flip-container` gives us the
+             same compositor-layer promotion without that side effect, and keeps
+             `translateZ(0)` in both flip states so the transition matrix never
+             collapses. -->
+        <div class="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flip-3d flip-container {isFlipped ? 'is-flipped' : ''}">
 
                 <!-- Back (unrevealed) -->
                 <div class="absolute inset-0 flip-backface rounded-lg border-2 border-[#C9A45A]/40 bg-gradient-to-br from-[#24314A] via-[#1A2337] to-[#0B1020] flex items-center justify-center">
@@ -156,15 +172,24 @@
                                 {#if !imgLoaded}
                                         <div class="absolute inset-0 bg-[#1A2337] animate-pulse"></div>
                                 {/if}
-                                <img
-                                        src={currentSrc}
-                                        alt={result.name}
-                                        loading="eager"
-                                        decoding="async"
-                                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
-                                        onload={handleImgLoad}
-                                        onerror={handleImgError}
-                                />
+                                {#if imgFailed}
+                                        <!-- Visible error placeholder so the card never appears "empty"
+                                             or "missing" after flip when all image sources 404. -->
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2 bg-[#1A2337]">
+                                                <div class="text-2xl {starColor} mb-1">✦</div>
+                                                <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">No Image</div>
+                                        </div>
+                                {:else}
+                                        <img
+                                                src={currentSrc}
+                                                alt={result.name}
+                                                loading="eager"
+                                                decoding="async"
+                                                class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
+                                                onload={handleImgLoad}
+                                                onerror={handleImgError}
+                                        />
+                                {/if}
                         </div>
 
                         <!-- Info -->
