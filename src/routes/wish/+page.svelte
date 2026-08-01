@@ -5,6 +5,8 @@
         import BannerCard from '$lib/components/BannerCard.svelte';
         import PityBar from '$lib/components/PityBar.svelte';
         import ModePityBadge from '$lib/components/ModePityBadge.svelte';
+        import WhatIfSimulator from '$lib/components/WhatIfSimulator.svelte';
+        import StreakTracker from '$lib/components/StreakTracker.svelte';
         import WishAnimation from '$lib/components/WishAnimation.svelte';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
         import { STANDARD_WISH_POOLS } from '$lib/utils/standardWishEngine';
@@ -459,6 +461,10 @@
                                 guaranteed5={game.guaranteed5}
                                 guaranteed4={game.guaranteed4}
                         />
+                        <!-- What-if calculator: pulls/primo to reach milestones -->
+                        <WhatIfSimulator />
+                        <!-- No-5★ streak tracker for active banner -->
+                        <StreakTracker />
                         <!-- Compact per-mode pity overview (all 3 banners at a glance) -->
                         <ModePityBadge />
                 </div>
