@@ -7,6 +7,7 @@
         import ModePityBadge from '$lib/components/ModePityBadge.svelte';
         import WhatIfSimulator from '$lib/components/WhatIfSimulator.svelte';
         import StreakTracker from '$lib/components/StreakTracker.svelte';
+        import SoundSettings from '$lib/components/SoundSettings.svelte';
         import WishAnimation from '$lib/components/WishAnimation.svelte';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
         import { STANDARD_WISH_POOLS } from '$lib/utils/standardWishEngine';
@@ -467,6 +468,8 @@
                         <StreakTracker />
                         <!-- Compact per-mode pity overview (all 3 banners at a glance) -->
                         <ModePityBadge />
+                        <!-- Sound settings: volume + per-category mute -->
+                        <SoundSettings />
                 </div>
 
                 <div class="lg:col-span-2 bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/20 shadow-xl p-4 space-y-3">

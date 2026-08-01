@@ -6,6 +6,7 @@
         import LuckChart from '$lib/components/LuckChart.svelte';
         import BannerSummary from '$lib/components/BannerSummary.svelte';
         import LuckComparison from '$lib/components/LuckComparison.svelte';
+        import AchievementTracker from '$lib/components/AchievementTracker.svelte';
         import ThemedModal from '$lib/components/ThemedModal.svelte';
         import { fade, fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
@@ -261,6 +262,11 @@
                 <!-- ═══ Luck Comparison (per-banner) ═══ -->
                 <section>
                         <LuckComparison />
+                </section>
+
+                <!-- ═══ Achievements ═══ -->
+                <section>
+                        <AchievementTracker />
                 </section>
         {/if}
 
