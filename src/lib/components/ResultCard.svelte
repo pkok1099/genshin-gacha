@@ -1,5 +1,7 @@
 <script lang="ts">
         import type { WishResult } from '$lib/stores/gameState.svelte';
+        import { playCardFlip } from '$lib/audio/synth.svelte';
+        import { untrack } from 'svelte';
 
         let {
                 result,
@@ -14,11 +16,68 @@
         let isFlipped: boolean = $state(false);
         let imgLoaded: boolean = $state(false);
 
-        // Single timer per card — cleared on reset. Genshin staggers flips ~120ms.
+        // ── 3-tier image fallback chain ──────────────────────────────────────────
+        // Order: HoYoverse CDN (official, always current) → jmp.blue (community) → SVG
+        // We try HoYoverse FIRST when available because new characters (Columbina,
+        // Jahoda, Ororon, etc.) often 404 on jmp.blue for weeks after release.
+        // untrack: we intentionally capture initial values; result is keyed per
+        // wish so the component remounts on each new pull.
+        const { rarity, fallbackIcon, icon } = untrack(() => ({
+                rarity: result.rarity,
+                fallbackIcon: result.fallbackIcon,
+                icon: result.icon
+        }));
+
+        const iconSources: string[] = (() => {
+                const list: string[] = [];
+                if (fallbackIcon) list.push(fallbackIcon);  // HoYoverse CDN
+                if (icon) list.push(icon);                   // jmp.blue
+                return list;
+        })();
+
+        // If both are missing, use SVG fallback immediately
+        const svgFallback = 'data:image/svg+xml,' + encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+                '<rect fill="#1A2337" width="100" height="100"/>' +
+                `<text fill="#E6C77A" font-size="14" x="50" y="55" text-anchor="middle">★${rarity}</text>` +
+                '</svg>'
+        );
+
+        if (iconSources.length === 0) iconSources.push(svgFallback);
+
+        let currentSrcIdx = $state(0);
+        let currentSrc = $derived(iconSources[currentSrcIdx] ?? svgFallback);
+
+        $effect(() => {
+                // Reset image state when result changes (defensive — keyed each should remount)
+                imgLoaded = false;
+                currentSrcIdx = 0;
+        });
+
+        function handleImgError(e: Event) {
+                const img = e.currentTarget as HTMLImageElement;
+                // Try next source in the chain
+                if (currentSrcIdx < iconSources.length - 1) {
+                        currentSrcIdx += 1;
+                } else {
+                        // Exhausted all sources — use SVG fallback permanently
+                        img.src = svgFallback;
+                        imgLoaded = true;
+                }
+        }
+
+        function handleImgLoad() {
+                imgLoaded = true;
+        }
+
+        // ── Flip animation ──
         $effect(() => {
                 if (revealed) {
                         const delay = index * 120;
-                        const timer = setTimeout(() => { isFlipped = true; }, delay);
+                        const timer = setTimeout(() => {
+                                isFlipped = true;
+                                playCardFlip();
+                        }, delay);
                         return () => clearTimeout(timer);
                 } else {
                         isFlipped = false;
@@ -64,11 +123,9 @@
         role="button"
         tabindex="0"
         class="result-card w-[130px] h-[185px] md:w-[150px] md:h-[210px] perspective-[1200px] cursor-pointer select-none"
-        onclick={() => { isFlipped = !isFlipped; }}
+        onclick={() => { isFlipped = !isFlipped; playCardFlip(); }}
         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); isFlipped = !isFlipped; } }}
 >
-        <!-- Flip container — gpu-layer so the rotateY transform stays on the
-             compositor and doesn't trigger layout on the parent. -->
         <div class="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flip-3d gpu-layer {isFlipped ? 'flip-rotate-y' : ''}">
 
                 <!-- Back (unrevealed) -->
@@ -77,7 +134,6 @@
                                 <div class="text-4xl text-[#E6C77A] mb-1">✦</div>
                                 <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Genshin</div>
                         </div>
-                        <!-- Subtle pattern -->
                         <div class="absolute inset-0 opacity-20"
                                 style="background-image: radial-gradient(circle at 30% 20%, rgba(230,199,122,0.3), transparent 40%), radial-gradient(circle at 70% 80%, rgba(141,114,201,0.2), transparent 40%);">
                         </div>
@@ -86,37 +142,28 @@
                 <!-- Front (revealed) -->
                 <div class="absolute inset-0 flip-backface flip-rotate-y rounded-lg border-2 {rarityBorder} bg-gradient-to-br {rarityBg} overflow-hidden">
 
-                        <!-- 5★ shimmer -->
                         {#if result.rarity === 5}
                                 <div class="absolute inset-0 gold-shimmer opacity-30 pointer-events-none"></div>
                         {/if}
 
-                        <!-- 5★ particle burst on flip -->
                         {#if result.rarity === 5 && isFlipped}
                                 <div class="particle-burst"></div>
                         {/if}
 
-                        <!-- Image -->
-                        <div class="relative w-full h-[65%] bg-[#0B1020]/70 flex items-center justify-center overflow-hidden">
+                        <!-- Image — eager loading (we're in a modal, want immediate load).
+                             3-tier fallback chain handled in script. -->
+                        <div class="relative w-full h-[65%] bg-[#0B1020]/70 overflow-hidden">
                                 {#if !imgLoaded}
                                         <div class="absolute inset-0 bg-[#1A2337] animate-pulse"></div>
                                 {/if}
                                 <img
-                                        src={result.icon}
+                                        src={currentSrc}
                                         alt={result.name}
-                                        loading="lazy"
+                                        loading="eager"
                                         decoding="async"
-                                        class="w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
-                                        onload={() => imgLoaded = true}
-                                        onerror={(e: Event) => {
-                                                const img = e.currentTarget as HTMLImageElement;
-                                                if (result.fallbackIcon && img.src !== result.fallbackIcon) {
-                                                        img.src = result.fallbackIcon;
-                                                } else {
-                                                        img.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1A2337" width="100" height="100"/><text fill="#E6C77A" font-size="14" x="50" y="55" text-anchor="middle">★' + result.rarity + '</text></svg>');
-                                                        imgLoaded = true;
-                                                }
-                                        }}
+                                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
+                                        onload={handleImgLoad}
+                                        onerror={handleImgError}
                                 />
                         </div>
 

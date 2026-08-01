@@ -113,13 +113,15 @@
                                                                 <td class="px-3 py-2">
                                                                         <div class="w-9 h-9 rounded-md overflow-hidden border border-[#24314A] bg-[#0B1020]">
                                                                                 <img
-                                                                                        src={item.icon}
+                                                                                        src={item.fallbackIcon ?? item.icon}
                                                                                         alt={item.name}
+                                                                                        loading="lazy"
+                                                                                        decoding="async"
                                                                                         class="w-full h-full object-cover"
                                                                                         onerror={(e: Event) => {
                                                                                                 const img = e.currentTarget as HTMLImageElement;
-                                                                                                if (item.fallbackIcon && img.src !== item.fallbackIcon) {
-                                                                                                        img.src = item.fallbackIcon;
+                                                                                                if (img.src !== item.icon && item.icon) {
+                                                                                                        img.src = item.icon;
                                                                                                 } else {
                                                                                                         img.style.opacity = '0';
                                                                                                 }

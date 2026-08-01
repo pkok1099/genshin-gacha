@@ -409,15 +409,19 @@
                                         {#each game.wishHistory.slice(-10).reverse() as item (item.id)}
                                                 <div class="aspect-[3/4] rounded-md overflow-hidden border {item.rarity === 5 ? 'border-[#E6C77A] gold-glow' : item.rarity === 4 ? 'border-[#B495F0] purple-glow' : 'border-[#5E90D6]'} bg-[#0B1020] relative group">
                                                         <img
-                                                                src={item.icon}
+                                                                src={item.fallbackIcon ?? item.icon}
                                                                 alt={item.name}
+                                                                loading="eager"
+                                                                decoding="async"
                                                                 class="w-full h-full object-cover"
                                                                 onerror={(e: Event) => {
                                                                         const img = e.currentTarget as HTMLImageElement;
-                                                                        if (item.fallbackIcon && img.src !== item.fallbackIcon) {
-                                                                                img.src = item.fallbackIcon;
+                                                                        // Try primary jmp.blue URL if we started with fallback
+                                                                        if (img.src !== item.icon && item.icon) {
+                                                                                img.src = item.icon;
                                                                         } else {
-                                                                                img.style.opacity = '0.2';
+                                                                                // Final fallback: hide image, show rarity stars only
+                                                                                img.style.display = 'none';
                                                                         }
                                                                 }}
                                                         />
