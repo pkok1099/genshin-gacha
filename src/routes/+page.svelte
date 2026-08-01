@@ -58,7 +58,7 @@
 
                                 <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-[#F2E6D0]">
                                         {t('home.title').split(' ')[0]}
-                                        <span class="block bg-gradient-to-r from-[#E6C77A] via-[#C9A45A] to-[#E6C77A] bg-clip-text text-transparent">
+                                        <span class="block text-shimmer">
                                                 {t('home.title').split(' ').slice(1).join(' ')}
                                         </span>
                                 </h1>
@@ -71,7 +71,7 @@
                                         <a
                                                 href="/wish"
                                                 onclick={handleCta}
-                                                class="btn-press inline-flex items-center gap-2 px-6 py-3 rounded-md border border-[#C9A45A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm transition-all hover:shadow-[0_0_30px_rgba(230,199,122,0.5)]"
+                                                class="btn-glow inline-flex items-center gap-2 px-6 py-3 rounded-md border border-[#E6C77A]/50 bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] font-heading font-semibold tracking-wider uppercase text-sm"
                                         >
                                                 <span>✦</span> {t('home.cta.wish')}
                                         </a>

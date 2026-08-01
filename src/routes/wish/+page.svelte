@@ -316,7 +316,7 @@
                                                         <button
                                                                 onclick={handleSinglePull}
                                                                 disabled={!canSingle}
-                                                                class="btn-press relative group bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold py-4 px-4 rounded-lg border border-[#C9A45A]/30 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#C9A45A]/60 hover:shadow-[0_0_20px_rgba(201,164,90,0.25)]"
+                                                                class="btn-glow relative group bg-gradient-to-br from-[#24314A] to-[#1A2337] hover:from-[#2A3856] hover:to-[#24314A] text-[#E6C77A] font-heading font-semibold py-4 px-4 rounded-lg border border-[#C9A45A]/30 text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden"
                                                         >
                                                                 <span class="text-base tracking-wider uppercase">✦ 1× Wish</span>
                                                                 <span class="text-[10px] text-[#8E97AA] font-mono">{game.COST_SINGLE} Primo</span>
@@ -324,7 +324,7 @@
                                                         <button
                                                                 onclick={handleTenPull}
                                                                 disabled={!canTen}
-                                                                class="btn-press relative group bg-gradient-to-br from-[#C9A45A] to-[#8D72C9] hover:from-[#E6C77A] hover:to-[#B495F0] text-[#0B1020] font-heading font-bold py-4 px-4 rounded-lg border border-[#E6C77A]/50 transition-all text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_30px_rgba(230,199,122,0.45)]"
+                                                                class="btn-glow relative group bg-gradient-to-br from-[#C9A45A] to-[#8D72C9] hover:from-[#E6C77A] hover:to-[#B495F0] text-[#0B1020] font-heading font-bold py-4 px-4 rounded-lg border border-[#E6C77A]/50 text-sm flex flex-col items-center justify-center gap-0.5 overflow-hidden"
                                                         >
                                                                 <span class="text-base tracking-wider uppercase">✦✦ 10× Wish</span>
                                                                 <span class="text-[10px] text-[#0B1020]/70 font-mono font-semibold">{tenPullCost.toLocaleString('en-US')} Primo</span>
@@ -475,7 +475,18 @@
                                 <a href="/history" class="text-[10px] text-[#C9A45A] hover:text-[#E6C77A] uppercase tracking-wider">Lihat semua →</a>
                         </div>
                         {#if game.wishHistory.length === 0}
-                                <div class="text-[#8E97AA] italic text-center py-8 text-sm">Belum ada wish. Tekan tombol pull di atas!</div>
+                                <div class="flex flex-col items-center justify-center py-12 px-4 text-center space-y-3">
+                                        <div class="relative">
+                                                <div class="text-5xl text-[#C9A45A]/30 select-none">✦</div>
+                                                <div class="absolute inset-0 text-5xl text-[#E6C77A]/20 select-none animate-pulse">✦</div>
+                                        </div>
+                                        <div class="space-y-1">
+                                                <div class="text-sm font-heading font-semibold text-[#B8C1D3]">Belum ada wish</div>
+                                                <div class="text-[11px] text-[#8E97AA] max-w-xs">
+                                                        Tekan tombol <span class="text-[#E6C77A] font-semibold">1× Wish</span> atau <span class="text-[#E6C77A] font-semibold">10× Wish</span> di atas untuk memulai!
+                                                </div>
+                                        </div>
+                                </div>
                         {:else}
                                 <div class="grid grid-cols-5 md:grid-cols-10 gap-2">
                                         {#each game.wishHistory.slice(-10).reverse() as item (item.id)}

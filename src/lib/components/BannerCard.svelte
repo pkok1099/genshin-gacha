@@ -38,8 +38,8 @@
 </script>
 
 <button
-        class="relative w-full text-left rounded-xl border-2 {elementColor} bg-gradient-to-br {elementColor} to-[#0B1020] overflow-hidden transition-all duration-300
-                {selected ? 'ring-2 ring-[#E6C77A] shadow-[0_0_30px_rgba(201,164,90,0.35)]' : 'hover:border-[#C9A45A]/80 hover:shadow-lg'}"
+        class="card-premium relative w-full text-left rounded-xl border-2 {elementColor} bg-gradient-to-br {elementColor} to-[#0B1020] overflow-hidden
+                {selected ? 'ring-2 ring-[#E6C77A] shadow-[0_0_30px_rgba(201,164,90,0.35)]' : ''}"
         {onclick}
 >
         <!-- Selected indicator -->

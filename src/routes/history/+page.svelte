@@ -149,28 +149,28 @@
                 <div class="flex gap-2 flex-wrap">
                         <a
                                 href="/wish"
-                                class="btn-press px-4 py-2 rounded-md border border-[#C9A45A]/40 bg-gradient-to-r from-[#24314A] to-[#1A2337] text-[#E6C77A] text-xs font-semibold uppercase tracking-wider transition-all hover:shadow-[0_0_20px_rgba(201,164,90,0.25)]"
+                                class="btn-glow px-4 py-2 rounded-md bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] text-xs font-heading font-bold uppercase tracking-wider"
                         >
                                 ← {t('nav.wish')}
                         </a>
                         <button
                                 onclick={handleExport}
                                 disabled={game.wishHistory.length === 0}
-                                class="btn-press px-4 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                class="btn-press px-4 py-2 rounded-md border border-[#C9A45A]/30 bg-[#0B1020]/60 text-[#E6C77A] hover:bg-[#C9A45A]/10 text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:saturate-0"
                                 title="Download wish history as JSON file"
                         >
                                 ⤓ Export
                         </button>
                         <button
                                 onclick={handleImportClick}
-                                class="btn-press px-4 py-2 rounded-md border border-[#24314A] bg-[#0B1020]/60 text-[#B8C1D3] hover:text-[#E6C77A] hover:border-[#C9A45A]/40 text-xs font-semibold uppercase tracking-wider transition-all"
+                                class="btn-press px-4 py-2 rounded-md border border-[#C9A45A]/30 bg-[#0B1020]/60 text-[#E6C77A] hover:bg-[#C9A45A]/10 text-xs font-semibold uppercase tracking-wider transition-all"
                                 title="Import wish history from JSON file (replaces current)"
                         >
                                 ⤒ Import
                         </button>
                         <button
                                 onclick={openReset}
-                                class="btn-press px-4 py-2 rounded-md border border-[#8B3A3A]/40 bg-[#8B3A3A]/15 text-[#E8745A] text-xs font-semibold uppercase tracking-wider hover:bg-[#8B3A3A]/25 transition-all"
+                                class="btn-press px-4 py-2 rounded-md border border-[#8B3A3A]/40 bg-[#8B3A3A]/15 text-[#E8745A] hover:bg-[#8B3A3A]/25 text-xs font-semibold uppercase tracking-wider transition-all"
                         >
                                 {t('history.btn.reset')}
                         </button>
@@ -219,6 +219,8 @@
                 <!-- ═══ Per-Banner Summary ═══ -->
                 <BannerSummary />
 
+                <div class="divider-ornament"></div>
+
                 <!-- ═══ Banner Filter ═══ -->
                 <section class="space-y-2">
                         <h2 class="font-heading text-sm font-semibold text-[#E6C77A] uppercase tracking-wider">Filter Banner</h2>
@@ -254,6 +256,8 @@
                         </div>
                 </section>
 
+                <div class="divider-ornament"></div>
+
                 <!-- ═══ Charts ═══ -->
                 <section>
                         <h2 class="font-heading text-xl font-semibold text-[#F2E6D0] mb-3">{t('history.section.distribution')}</h2>
@@ -264,6 +268,8 @@
                 <section>
                         <PityHeatmap />
                 </section>
+
+                <div class="divider-ornament"></div>
 
                 <!-- ═══ Luck Comparison (per-banner) ═══ -->
                 <section>

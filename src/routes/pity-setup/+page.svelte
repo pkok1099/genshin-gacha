@@ -179,7 +179,7 @@
                         {#each MODE_PRESETS as p}
                                 <button
                                         onclick={() => applyPreset(p)}
-                                        class="btn-press card-hover text-left p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all"
+                                        class="card-premium btn-press text-left p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020]"
                                 >
                                         <div class="flex items-center justify-between mb-1">
                                                 <span class="font-heading text-sm font-semibold text-[#F2E6D0]">{p.label}</span>
