@@ -19,6 +19,7 @@
 
         let allRevealed: boolean = $state(false);
         let showContinue: boolean = $state(false);
+        let skipped: boolean = $state(false);
 
         // Sort: 5★ first (so they appear at the front), then 4★, then 3★.
         let sortedResults = $derived(
@@ -30,21 +31,41 @@
         const REVEAL_INITIAL_DELAY_MS = 350;
         const CONTINUE_DELAY_MS = 400;
 
+        // Timer handles so skip() can cancel pending reveals.
+        let revealTimer: ReturnType<typeof setTimeout> | null = null;
+        let continueTimer: ReturnType<typeof setTimeout> | null = null;
+
         $effect(() => {
                 if (results.length > 0) {
                         allRevealed = false;
                         showContinue = false;
+                        skipped = false;
                         const totalRevealTime = REVEAL_INITIAL_DELAY_MS + results.length * REVEAL_STAGGER_MS;
-                        const t1 = setTimeout(() => {
+                        revealTimer = setTimeout(() => {
                                 allRevealed = true;
                                 // Play reveal sound based on highest rarity in this batch
                                 const topR = results.reduce((max, r) => r.rarity > max ? r.rarity : max, 3 as 3 | 4 | 5);
                                 playReveal(topR);
                         }, REVEAL_INITIAL_DELAY_MS);
-                        const t2 = setTimeout(() => { showContinue = true; }, totalRevealTime + CONTINUE_DELAY_MS);
-                        return () => { clearTimeout(t1); clearTimeout(t2); };
+                        continueTimer = setTimeout(() => { showContinue = true; }, totalRevealTime + CONTINUE_DELAY_MS);
+                        return () => {
+                                if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+                                if (continueTimer) { clearTimeout(continueTimer); continueTimer = null; }
+                        };
                 }
         });
+
+        // One-time skip: immediately reveal all cards + show Continue button.
+        // Does NOT persist a setting — for that, use the "Skip Animation" toggle
+        // on the wish page. This is for users who want to fast-forward the
+        // current pull's animation without changing their global preference.
+        function skipNow() {
+                if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+                if (continueTimer) { clearTimeout(continueTimer); continueTimer = null; }
+                allRevealed = true;
+                showContinue = true;
+                skipped = true;
+        }
 
         // ESC key closes — only after continue is available
         $effect(() => {
@@ -89,14 +110,29 @@
                 </div>
 
                 <div class="relative max-w-4xl w-full">
-                        <!-- Close -->
-                        <button
-                                onclick={onClose}
-                                class="absolute -top-12 right-0 text-[#8E97AA] hover:text-[#F2E6D0] text-2xl transition-colors z-10"
-                                aria-label="Close"
-                        >
-                                ✕
-                        </button>
+                        <!-- Top-right actions: Skip (one-time) + Close.
+                             Positioned inside the modal (top-2 right-2) so they
+                             stay visible on small viewports — the previous
+                             `-top-12` pushed them above the visible area when
+                             the modal was vertically centered in a short window. -->
+                        <div class="absolute top-2 right-2 flex items-center gap-2 z-20">
+                                {#if !showContinue}
+                                        <button
+                                                onclick={skipNow}
+                                                class="btn-press px-3 py-1.5 rounded-md border border-[#C9A45A]/40 bg-[#1A2337]/90 text-[#E6C77A] text-[11px] font-heading font-semibold uppercase tracking-wider hover:bg-[#24314A] hover:border-[#E6C77A]/60 transition-all"
+                                                aria-label="Skip animation"
+                                        >
+                                                ⏭ Skip
+                                        </button>
+                                {/if}
+                                <button
+                                        onclick={onClose}
+                                        class="text-[#8E97AA] hover:text-[#F2E6D0] text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#24314A]/60"
+                                        aria-label="Close"
+                                >
+                                        ✕
+                                </button>
+                        </div>
 
                         <!-- Title -->
                         <div class="text-center mb-6" in:fade={{ duration: 250, delay: 100 }}>

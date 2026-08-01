@@ -46,6 +46,10 @@
                         return;
                 }
                 pendingResults = [result.wish];
+                // Skip animation entirely if user has turned it off — results
+                // are already pushed to history by doSinglePull, so we just
+                // don't open the modal.
+                if (game.skipAnimation) return;
                 showAnimation = true;
         }
 
@@ -60,7 +64,12 @@
                         return;
                 }
                 pendingResults = result.wishes;
+                if (game.skipAnimation) return;
                 showAnimation = true;
+        }
+
+        function toggleSkipAnimation() {
+                game.setSkipAnimation(!game.skipAnimation);
         }
 
         function mapError(reason: 'no_banner' | 'insufficient_primo' | 'novice_maxed'): string {
@@ -318,6 +327,39 @@
                                                         <div class="font-mono text-[#E8745A] font-bold">90</div>
                                                 </div>
                                         </div>
+
+                                        <!-- Skip Animation toggle -->
+                                        <button
+                                                type="button"
+                                                onclick={toggleSkipAnimation}
+                                                class="w-full flex items-center justify-between p-2.5 rounded-md border border-[#24314A] bg-[#0B1020]/40 hover:bg-[#0B1020]/70 hover:border-[#C9A45A]/30 transition-all text-left"
+                                                aria-pressed={game.skipAnimation}
+                                                aria-label="Toggle skip wish animation"
+                                        >
+                                                <div class="flex items-center gap-2">
+                                                        <svg class="w-4 h-4 {game.skipAnimation ? 'text-[#E6C77A]' : 'text-[#8E97AA]'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                {#if game.skipAnimation}
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                                                                {:else}
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                {/if}
+                                                        </svg>
+                                                        <div>
+                                                                <div class="text-[11px] font-bold {game.skipAnimation ? 'text-[#E6C77A]' : 'text-[#B8C1D3]'} uppercase tracking-wider">Skip Animation</div>
+                                                                <div class="text-[9px] text-[#8E97AA] leading-tight">
+                                                                        {#if game.skipAnimation}
+                                                                                ON — pull langsung masuk history, tanpa modal flip
+                                                                        {:else}
+                                                                                OFF — tampilkan animasi flip card setelah pull
+                                                                        {/if}
+                                                                </div>
+                                                        </div>
+                                                </div>
+                                                <div class="relative w-10 h-5 rounded-full transition-colors shrink-0 {game.skipAnimation ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}">
+                                                        <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[#F2E6D0] transition-transform {game.skipAnimation ? 'translate-x-5' : ''}"></span>
+                                                </div>
+                                        </button>
                                 </div>
                         </div>
                 </div>

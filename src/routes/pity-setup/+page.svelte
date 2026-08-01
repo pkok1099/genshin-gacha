@@ -1,5 +1,5 @@
 <script lang="ts">
-        import { getGameState } from '$lib/stores/gameState.svelte';
+        import { getGameState, type WishMode } from '$lib/stores/gameState.svelte';
         import { fly, fade } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
         import ThemedRange from '$lib/components/ThemedRange.svelte';
@@ -7,77 +7,127 @@
 
         const game = getGameState();
 
-        let pity5Input = $state(game.pity5);
-        let pity4Input = $state(game.pity4);
-        let guaranteed5Input = $state(game.guaranteed5);
-        let primogemInput = $state(game.primogem);
-        let primogemInputStr = $state(String(game.primogem));
-        let pityLock5Enabled = $state(game.pityLock5 !== null);
-        let pityLock4Enabled = $state(game.pityLock4 !== null);
+        // ── Per-mode input mirrors ─────────────────────────────────────────────
+        // We keep a local editable copy for each mode so the user can edit
+        // without committing until "Apply". The $effect syncs from store →
+        // inputs whenever the store changes externally (e.g. preset applied).
 
-        // Sync inputs when external state changes
-        $effect(() => {
-                pity5Input = game.pity5;
-                pity4Input = game.pity4;
-                guaranteed5Input = game.guaranteed5;
-                primogemInput = game.primogem;
-                primogemInputStr = String(game.primogem);
-                pityLock5Enabled = game.pityLock5 !== null;
-                pityLock4Enabled = game.pityLock4 !== null;
+        type ModeInputs = {
+                pity5: number;
+                pity4: number;
+                guaranteed5: boolean;
+                pityLock5: boolean;     // toggle (the locked VALUE is pity5 itself)
+                pityLock4: boolean;
+        };
+
+        function snapshotMode(mode: WishMode): ModeInputs {
+                const m = game.getModePity(mode);
+                return {
+                        pity5: m.pity5,
+                        pity4: m.pity4,
+                        guaranteed5: m.guaranteed5,
+                        pityLock5: m.pityLock5 !== null,
+                        pityLock4: m.pityLock4 !== null
+                };
+        }
+
+        let inputs: Record<WishMode, ModeInputs> = $state({
+                character: snapshotMode('character'),
+                standard: snapshotMode('standard'),
+                novice: snapshotMode('novice')
         });
+
+        // Shared (not per-mode)
+        let primogemInputStr = $state(String(game.primogem));
+
+        // Re-sync from store when store changes externally (e.g. resetAll, preset)
+        $effect(() => {
+                inputs.character = snapshotMode('character');
+                inputs.standard = snapshotMode('standard');
+                inputs.novice = snapshotMode('novice');
+                primogemInputStr = String(game.primogem);
+        });
+
+        // Active tab — defaults to whatever wishMode is currently selected
+        // (so users landing here from the wish page land on the right tab).
+        let activeTab: WishMode = $state(game.wishMode);
+
+        const TABS: { mode: WishMode; label: string; icon: string; accent: string }[] = [
+                { mode: 'character', label: 'Character Event', icon: '✦', accent: 'text-[#E6C77A]' },
+                { mode: 'standard',  label: 'Standard Wish',   icon: '◈', accent: 'text-[#B8C1D3]' },
+                { mode: 'novice',    label: 'Novice Wish',     icon: '✚', accent: 'text-[#B495F0]' }
+        ];
 
         let saved = $state(false);
 
         function apply() {
-                // Parse primogem input safely (allow empty = 0)
+                // Persist primogem
                 const parsed = parseInt(primogemInputStr.replace(/[^\d]/g, ''), 10);
                 const primoAmount = Number.isFinite(parsed) ? parsed : 0;
-                game.setPity(pity5Input, pity4Input);
-                game.setGuaranteed5(guaranteed5Input);
                 game.setPrimogem(primoAmount);
-                primogemInput = primoAmount;
-                // Apply pity locks
-                game.setPityLock5(pityLock5Enabled ? pity5Input : null);
-                game.setPityLock4(pityLock4Enabled ? pity4Input : null);
+
+                // Persist per-mode pity
+                (Object.keys(inputs) as WishMode[]).forEach((mode) => {
+                        const inp = inputs[mode];
+                        game.setModePity(mode, inp.pity5, inp.pity4);
+                        game.setModeGuaranteed5(mode, inp.guaranteed5);
+                        game.setModePityLock5(mode, inp.pityLock5 ? inp.pity5 : null);
+                        game.setModePityLock4(mode, inp.pityLock4 ? inp.pity4 : null);
+                });
+
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
 
         function resetAll() {
                 game.resetAll();
-                pity5Input = 0;
-                pity4Input = 0;
-                guaranteed5Input = false;
-                primogemInput = game.DEFAULT_PRIMOGEM;
+                inputs = {
+                        character: snapshotMode('character'),
+                        standard: snapshotMode('standard'),
+                        novice: snapshotMode('novice')
+                };
                 primogemInputStr = String(game.DEFAULT_PRIMOGEM);
-                pityLock5Enabled = false;
-                pityLock4Enabled = false;
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
 
-        const PRESETS: { label: string; pity5: number; pity4: number; guaranteed5: boolean; primogem: number; desc: string }[] = [
+        // ── Per-mode presets ──────────────────────────────────────────────────
+        // Each preset sets the active tab's mode only. Primogem is shared.
+        type ModePreset = {
+                label: string;
+                pity5: number;
+                pity4: number;
+                guaranteed5: boolean;
+                primogem: number;
+                desc: string;
+        };
+
+        const MODE_PRESETS: ModePreset[] = [
                 { label: 'Fresh Account',      pity5: 0,  pity4: 0,  guaranteed5: false, primogem: 16000, desc: 'Akun baru, 0 pity, 16k primo' },
-                { label: 'Soft Pity Zone',     pity5: 74, pity4: 5,  guaranteed5: false, primogem: 12800, desc: 'Tepat di soft pity 5★ (8× 10-pull worth)' },
+                { label: 'Soft Pity Zone',     pity5: 74, pity4: 5,  guaranteed5: false, primogem: 12800, desc: 'Tepat di soft pity 5★ (74/89)' },
                 { label: 'Near Hard Pity',     pity5: 85, pity4: 9,  guaranteed5: false, primogem: 1600,  desc: 'Dekat hard pity 90, 1× 10-pull ready' },
-                { label: 'Guaranteed Featured', pity5: 0, pity4: 0,  guaranteed5: true,  primogem: 16000, desc: '5★ berikutnya dijamin featured' }
+                { label: 'Guaranteed Featured', pity5: 0,  pity4: 0,  guaranteed5: true,  primogem: 16000, desc: '5★ berikutnya dijamin featured' }
         ];
 
-        function applyPreset(p: typeof PRESETS[number]) {
-                pity5Input = p.pity5;
-                pity4Input = p.pity4;
-                guaranteed5Input = p.guaranteed5;
-                primogemInput = p.primogem;
+        function applyPreset(p: ModePreset) {
+                const inp = inputs[activeTab];
+                inp.pity5 = p.pity5;
+                inp.pity4 = p.pity4;
+                inp.guaranteed5 = p.guaranteed5;
+                inp.pityLock5 = false;
+                inp.pityLock4 = false;
                 primogemInputStr = String(p.primogem);
-                game.setPity(p.pity5, p.pity4);
-                game.setGuaranteed5(p.guaranteed5);
+
+                // Apply immediately to store for the active mode
+                game.setModePity(activeTab, p.pity5, p.pity4);
+                game.setModeGuaranteed5(activeTab, p.guaranteed5);
+                game.setModePityLock5(activeTab, null);
+                game.setModePityLock4(activeTab, null);
                 game.setPrimogem(p.primogem);
+
                 saved = true;
                 setTimeout(() => { saved = false; }, 2000);
         }
-
-        let pity5Percent = $derived(Math.min((pity5Input / 90) * 100, 100));
-        let pity4Percent = $derived(Math.min((pity4Input / 10) * 100, 100));
 
         // Quick primogem top-up helpers (added to current input)
         function addPrimo(amount: number) {
@@ -87,6 +137,11 @@
 
         // Live preview of parsed value for display under input
         let parsedPrimo = $derived(parseInt(primogemInputStr.replace(/[^\d]/g, ''), 10) || 0);
+
+        // Convenience derived for the active tab
+        let activeInput = $derived(inputs[activeTab]);
+        let pity5Percent = $derived(Math.min((activeInput.pity5 / 90) * 100, 100));
+        let pity4Percent = $derived(Math.min((activeInput.pity4 / 10) * 100, 100));
 </script>
 
 <svelte:head>
@@ -99,15 +154,29 @@
         <section class="space-y-2">
                 <h1 class="font-heading text-3xl md:text-4xl font-bold text-[#F2E6D0]">Pity Setup</h1>
                 <p class="text-sm text-[#B8C1D3] max-w-2xl">
-                        Atur pity dan <span class="text-[#E6C77A] font-semibold">primogem</span> agar simulasi sesuai kondisi akun Genshin Impact aslimu. Semua disimpan otomatis di localStorage.
+                        Atur pity <span class="text-[#E6C77A] font-semibold">per banner</span> — Character Event, Standard, dan Novice masing-masing punya pity terpisah, sama seperti game asli. Primogem dibagikan. Semua disimpan otomatis di localStorage.
                 </p>
         </section>
 
-        <!-- ═══ Presets ═══ -->
+        <!-- ═══ Mode Tabs ═══ -->
+        <section class="flex gap-1 p-1 rounded-lg bg-[#1A2337]/60 border border-[#24314A]">
+                {#each TABS as tab}
+                        <button
+                                onclick={() => { activeTab = tab.mode; }}
+                                class="flex-1 min-w-[100px] px-3 py-2.5 rounded-md text-xs font-heading font-semibold uppercase tracking-wider transition-all {activeTab === tab.mode ? 'bg-gradient-to-r from-[#C9A45A] to-[#E6C77A] text-[#0B1020] shadow-md' : 'text-[#B8C1D3] hover:text-[#F2E6D0] hover:bg-[#24314A]/60'}"
+                        >
+                                {tab.icon} {tab.label}
+                        </button>
+                {/each}
+        </section>
+
+        <!-- ═══ Presets (apply to active tab) ═══ -->
         <section class="space-y-3">
-                <h2 class="font-heading text-sm font-semibold text-[#E6C77A] uppercase tracking-wider">Quick Presets</h2>
+                <h2 class="font-heading text-sm font-semibold text-[#E6C77A] uppercase tracking-wider">
+                        Quick Presets <span class="text-[#8E97AA] normal-case font-normal">→ {TABS.find(t => t.mode === activeTab)?.label}</span>
+                </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {#each PRESETS as p}
+                        {#each MODE_PRESETS as p}
                                 <button
                                         onclick={() => applyPreset(p)}
                                         class="btn-press card-hover text-left p-4 rounded-lg border border-[#C9A45A]/25 bg-gradient-to-br from-[#1A2337] to-[#0B1020] hover:border-[#E6C77A]/60 transition-all"
@@ -123,20 +192,28 @@
                 </div>
         </section>
 
-        <!-- ═══ Manual Setup ═══ -->
+        <!-- ═══ Manual Setup (per-mode) ═══ -->
         <section class="bg-[#1A2337]/80 backdrop-blur-sm rounded-xl border border-[#C9A45A]/25 shadow-xl p-5 md:p-6 space-y-5">
-                <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">Manual Configuration</h2>
+
+                <div class="flex items-center justify-between">
+                        <h2 class="font-heading text-sm font-semibold text-[#F2E6D0] uppercase tracking-wider">
+                                {TABS.find(t => t.mode === activeTab)?.icon} {TABS.find(t => t.mode === activeTab)?.label} Configuration
+                        </h2>
+                        <span class="text-[10px] text-[#8E97AA] font-mono">
+                                pity5 {game.getModePity(activeTab).pity5}/90 · pity4 {game.getModePity(activeTab).pity4}/10
+                        </span>
+                </div>
 
                 <!-- 5★ Pity -->
                 <div class="space-y-2">
                         <ThemedRange
-                                id="pity5"
+                                id="pity5-{activeTab}"
                                 label="5★ Pity"
-                                value={pity5Input}
+                                value={activeInput.pity5}
                                 min={0}
                                 max={89}
                                 accent="gold"
-                                oninput={(e) => { pity5Input = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
+                                oninput={(e) => { inputs[activeTab].pity5 = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
                         />
                         <div class="flex justify-between text-[10px] text-[#8E97AA]">
                                 <span>0 (fresh)</span>
@@ -148,20 +225,96 @@
                 <!-- 4★ Pity -->
                 <div class="space-y-2">
                         <ThemedRange
-                                id="pity4"
+                                id="pity4-{activeTab}"
                                 label="4★ Pity"
-                                value={pity4Input}
+                                value={activeInput.pity4}
                                 min={0}
                                 max={9}
                                 accent="purple"
-                                oninput={(e) => { pity4Input = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
+                                oninput={(e) => { inputs[activeTab].pity4 = parseInt((e.currentTarget as HTMLInputElement).value, 10); }}
                         />
                 </div>
 
-                <!-- Primogem Manual Input -->
+                <!-- 5★ Guaranteed Toggle (only meaningful for Character Event) -->
+                {#if activeTab === 'character'}
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
+                                <div>
+                                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">5★ Guaranteed Featured</div>
+                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">Aktifkan jika 5★ sebelumnya kalah 50/50 (lost). Berikutnya dijamin featured.</div>
+                                </div>
+                                <button
+                                        onclick={() => { inputs[activeTab].guaranteed5 = !inputs[activeTab].guaranteed5; }}
+                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {activeInput.guaranteed5 ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}"
+                                        aria-pressed={activeInput.guaranteed5}
+                                        aria-label="Toggle 5★ guaranteed featured"
+                                >
+                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {activeInput.guaranteed5 ? 'translate-x-6' : ''}"></span>
+                                </button>
+                        </div>
+                {:else}
+                        <div class="text-[11px] text-[#8E97AA] bg-[#0B1020]/40 border border-[#24314A] rounded-md p-3 leading-relaxed">
+                                {#if activeTab === 'standard'}
+                                        ◈ Standard Wish tidak punya rate-up / 50/50, jadi tidak ada toggle Guaranteed Featured. Pity 5★/4★ tetap berlaku.
+                                {:else}
+                                        ✚ Novice Wish menggunakan pool yang sama dengan Standard Wish (Wanderlust Invocation). Tidak ada 50/50.
+                                {/if}
+                        </div>
+                {/if}
+
+                <!-- Pity Lock Section -->
+                <div class="space-y-2 pt-2 border-t border-[#24314A]">
+                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Pity Lock (Reset Behavior)</div>
+                        <div class="text-[11px] text-[#8E97AA] mb-2">
+                                Secara default, pity reset ke 0 setelah dapat 5★/4★. Aktifkan lock untuk <span class="text-[#E6C77A] font-semibold">reset ke nilai yang di-set</span> alih-alih ke 0 — berguna untuk testing soft pity berulang.
+                        </div>
+
+                        <!-- 5★ Pity Lock -->
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
+                                <div>
+                                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Lock Pity 5★</div>
+                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
+                                                Setelah dapat 5★, reset pity ke <span class="font-mono text-[#E6C77A]">{activeInput.pity5}</span> (bukan 0)
+                                        </div>
+                                </div>
+                                <button
+                                        onclick={() => { inputs[activeTab].pityLock5 = !inputs[activeTab].pityLock5; }}
+                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {activeInput.pityLock5 ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}"
+                                        aria-pressed={activeInput.pityLock5}
+                                        aria-label="Toggle 5★ pity lock"
+                                >
+                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {activeInput.pityLock5 ? 'translate-x-6' : ''}"></span>
+                                </button>
+                        </div>
+
+                        <!-- 4★ Pity Lock -->
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
+                                <div>
+                                        <div class="text-xs font-bold text-[#B495F0] uppercase tracking-wider">Lock Pity 4★</div>
+                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
+                                                Setelah dapat 4★, reset pity ke <span class="font-mono text-[#B495F0]">{activeInput.pity4}</span> (bukan 0)
+                                        </div>
+                                </div>
+                                <button
+                                        onclick={() => { inputs[activeTab].pityLock4 = !inputs[activeTab].pityLock4; }}
+                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {activeInput.pityLock4 ? 'bg-[#8D72C9]' : 'bg-[#24314A]'}"
+                                        aria-pressed={activeInput.pityLock4}
+                                        aria-label="Toggle 4★ pity lock"
+                                >
+                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {activeInput.pityLock4 ? 'translate-x-6' : ''}"></span>
+                                </button>
+                        </div>
+
+                        {#if activeInput.pityLock5 || activeInput.pityLock4}
+                                <div class="text-[10px] text-[#E0B25A] bg-[#E0B25A]/10 border border-[#E0B25A]/30 rounded-md p-2 leading-relaxed">
+                                        ⚠ Pity lock aktif untuk {TABS.find(t => t.mode === activeTab)?.label}. Pull 5★/4★ akan reset ke nilai yang di-set, bukan ke 0. Ini untuk simulasi/testing — di game asli pity selalu reset ke 0.
+                                </div>
+                        {/if}
+                </div>
+
+                <!-- Primogem (shared) -->
                 <div class="space-y-2 pt-2 border-t border-[#24314A]">
                         <div class="flex justify-between items-center">
-                                <label for="primogem" class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Primogem</label>
+                                <label for="primogem" class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Primogem <span class="text-[#8E97AA] normal-case font-normal">(dibagikan semua banner)</span></label>
                                 <span class="text-[10px] font-mono text-[#8E97AA]">
                                         ≈ {Math.floor(parsedPrimo / 160)} wish ({Math.floor(parsedPrimo / 1600)}× 10-pull)
                                 </span>
@@ -210,72 +363,6 @@
                         </div>
                 </div>
 
-                <!-- 5★ Guaranteed Toggle -->
-                <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
-                        <div>
-                                <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">5★ Guaranteed Featured</div>
-                                <div class="text-[11px] text-[#8E97AA] mt-0.5">Aktifkan jika 5★ sebelumnya kalah 50/50 (lost). Berikutnya dijamin featured.</div>
-                        </div>
-                        <button
-                                onclick={() => guaranteed5Input = !guaranteed5Input}
-                                class="relative w-12 h-6 rounded-full transition-colors shrink-0 {guaranteed5Input ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}"
-                                aria-pressed={guaranteed5Input}
-                                aria-label="Toggle 5★ guaranteed featured"
-                        >
-                                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {guaranteed5Input ? 'translate-x-6' : ''}"></span>
-                        </button>
-                </div>
-
-                <!-- Pity Lock Section -->
-                <div class="space-y-2 pt-2 border-t border-[#24314A]">
-                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Pity Lock (Reset Behavior)</div>
-                        <div class="text-[11px] text-[#8E97AA] mb-2">
-                                Secara default, pity reset ke 0 setelah dapat 5★/4★. Aktifkan lock untuk <span class="text-[#E6C77A] font-semibold">reset ke nilai yang di-set</span> alih-alih ke 0 — berguna untuk testing soft pity berulang.
-                        </div>
-
-                        <!-- 5★ Pity Lock -->
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
-                                <div>
-                                        <div class="text-xs font-bold text-[#E6C77A] uppercase tracking-wider">Lock Pity 5★</div>
-                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
-                                                Setelah dapat 5★, reset pity ke <span class="font-mono text-[#E6C77A]">{pity5Input}</span> (bukan 0)
-                                        </div>
-                                </div>
-                                <button
-                                        onclick={() => pityLock5Enabled = !pityLock5Enabled}
-                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {pityLock5Enabled ? 'bg-[#C9A45A]' : 'bg-[#24314A]'}"
-                                        aria-pressed={pityLock5Enabled}
-                                        aria-label="Toggle 5★ pity lock"
-                                >
-                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {pityLock5Enabled ? 'translate-x-6' : ''}"></span>
-                                </button>
-                        </div>
-
-                        <!-- 4★ Pity Lock -->
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-[#0B1020]/60 border border-[#24314A]">
-                                <div>
-                                        <div class="text-xs font-bold text-[#B495F0] uppercase tracking-wider">Lock Pity 4★</div>
-                                        <div class="text-[11px] text-[#8E97AA] mt-0.5">
-                                                Setelah dapat 4★, reset pity ke <span class="font-mono text-[#B495F0]">{pity4Input}</span> (bukan 0)
-                                        </div>
-                                </div>
-                                <button
-                                        onclick={() => pityLock4Enabled = !pityLock4Enabled}
-                                        class="relative w-12 h-6 rounded-full transition-colors shrink-0 {pityLock4Enabled ? 'bg-[#8D72C9]' : 'bg-[#24314A]'}"
-                                        aria-pressed={pityLock4Enabled}
-                                        aria-label="Toggle 4★ pity lock"
-                                >
-                                        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#F2E6D0] transition-transform {pityLock4Enabled ? 'translate-x-6' : ''}"></span>
-                                </button>
-                        </div>
-
-                        {#if pityLock5Enabled || pityLock4Enabled}
-                                <div class="text-[10px] text-[#E0B25A] bg-[#E0B25A]/10 border border-[#E0B25A]/30 rounded-md p-2 leading-relaxed">
-                                        ⚠ Pity lock aktif. Pull 5★/4★ akan reset ke nilai yang di-set, bukan ke 0. Ini untuk simulasi/testing — di game asli pity selalu reset ke 0.
-                                </div>
-                        {/if}
-                </div>
-
                 <!-- Actions -->
                 <div class="flex gap-2 pt-2 border-t border-[#24314A]">
                         <button
@@ -302,22 +389,42 @@
                 {/if}
         </section>
 
-        <!-- ═══ Current State ═══ -->
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="bg-[#1A2337]/80 border border-[#C9A45A]/20 rounded-lg p-4 text-center">
-                        <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Current Pity 5★</div>
-                        <div class="font-mono text-2xl font-bold text-[#E6C77A] tabular-nums mt-1">{game.pity5}/90</div>
+        <!-- ═══ Current State (all 3 modes at a glance) ═══ -->
+        <section class="space-y-3">
+                <h2 class="font-heading text-sm font-semibold text-[#E6C77A] uppercase tracking-wider">Current State — All Banners</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {#each TABS as tab}
+                                {@const m = game.getModePity(tab.mode)}
+                                <div class="bg-[#1A2337]/80 border border-[#C9A45A]/20 rounded-lg p-4 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                                <span class="text-xs font-heading font-semibold {tab.accent} uppercase tracking-wider">{tab.icon} {tab.label}</span>
+                                                {#if game.wishMode === tab.mode}
+                                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-[#E6C77A]/20 text-[#E6C77A] font-bold">ACTIVE</span>
+                                                {/if}
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 text-center">
+                                                <div class="bg-[#0B1020]/40 rounded p-2">
+                                                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Pity 5★</div>
+                                                        <div class="font-mono text-lg font-bold text-[#E6C77A] tabular-nums">{m.pity5}/90</div>
+                                                </div>
+                                                <div class="bg-[#0B1020]/40 rounded p-2">
+                                                        <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">Pity 4★</div>
+                                                        <div class="font-mono text-lg font-bold text-[#B495F0] tabular-nums">{m.pity4}/10</div>
+                                                </div>
+                                        </div>
+                                        {#if tab.mode === 'character'}
+                                                <div class="text-[10px] text-[#8E97AA] text-center">
+                                                        Guaranteed: <span class="{m.guaranteed5 ? 'text-[#E6C77A] font-bold' : 'text-[#5E6478]'}">{m.guaranteed5 ? 'YA' : 'TIDAK'}</span>
+                                                </div>
+                                        {/if}
+                                        {#if m.pityLock5 !== null || m.pityLock4 !== null}
+                                                <div class="text-[9px] text-[#E0B25A] text-center">🔒 Lock aktif</div>
+                                        {/if}
+                                </div>
+                        {/each}
                 </div>
-                <div class="bg-[#1A2337]/80 border border-[#8D72C9]/20 rounded-lg p-4 text-center">
-                        <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Current Pity 4★</div>
-                        <div class="font-mono text-2xl font-bold text-[#B495F0] tabular-nums mt-1">{game.pity4}/10</div>
-                </div>
                 <div class="bg-[#1A2337]/80 border border-[#C9A45A]/20 rounded-lg p-4 text-center">
-                        <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Guaranteed 5★</div>
-                        <div class="font-mono text-2xl font-bold mt-1 {game.guaranteed5 ? 'text-[#E6C77A]' : 'text-[#5E6478]'}">{game.guaranteed5 ? 'YA' : 'TIDAK'}</div>
-                </div>
-                <div class="bg-[#1A2337]/80 border border-[#C9A45A]/20 rounded-lg p-4 text-center">
-                        <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Primogem</div>
+                        <div class="text-[10px] text-[#8E97AA] uppercase tracking-wider">Primogem (Shared)</div>
                         <div class="font-mono text-2xl font-bold text-[#E6C77A] tabular-nums mt-1">{game.primogem.toLocaleString('en-US')}</div>
                 </div>
         </section>
@@ -325,7 +432,7 @@
         <!-- ═══ Info ═══ -->
         <div class="text-xs text-[#8E97AA] bg-[#1A2337]/40 border border-[#24314A] rounded-md p-4 leading-relaxed" in:fade>
                 <span class="text-[#E6C77A] font-semibold">Catatan:</span>
-                Reset All akan menghapus primogem, pity, dan history. Untuk hanya menghapus history, gunakan tombol di halaman <a href="/history" class="text-[#C9A45A] hover:text-[#E6C77A]">/history</a>.
+                Tiap banner punya pity terpisah (sama seperti game asli). Pull di Character Event tidak menggeser pity Standard. Reset All akan menghapus primogem, semua pity, dan history. Untuk hanya menghapus history, gunakan tombol di halaman <a href="/history" class="text-[#C9A45A] hover:text-[#E6C77A]">/history</a>.
         </div>
 
 </div>

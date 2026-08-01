@@ -181,6 +181,21 @@ const ID: Dict = {
         'pity-setup.preset.soft': 'Soft Pity Zone',
         'pity-setup.preset.near-hard': 'Near Hard Pity',
         'pity-setup.preset.guaranteed': 'Guaranteed Featured',
+        // Per-mode pity (v2)
+        'pity-setup.tab.character': 'Character Event',
+        'pity-setup.tab.standard': 'Standard Wish',
+        'pity-setup.tab.novice': 'Novice Wish',
+        'pity-setup.section.per-mode': 'Atur pity per banner — Character Event, Standard, dan Novice masing-masing punya pity terpisah, sama seperti game asli. Primogem dibagikan.',
+        'pity-setup.guaranteed-5-disabled-standard': '◈ Standard Wish tidak punya rate-up / 50/50, jadi tidak ada toggle Guaranteed Featured. Pity 5★/4★ tetap berlaku.',
+        'pity-setup.guaranteed-5-disabled-novice': '✚ Novice Wish menggunakan pool yang sama dengan Standard Wish (Wanderlust Invocation). Tidak ada 50/50.',
+        'pity-setup.primogem-shared': '(dibagikan semua banner)',
+        'pity-setup.current-state.title': 'Current State — All Banners',
+        'pity-setup.current-state.active': 'ACTIVE',
+        // Skip animation
+        'wish.skip-animation.label': 'Skip Animation',
+        'wish.skip-animation.on': 'ON — pull langsung masuk history, tanpa modal flip',
+        'wish.skip-animation.off': 'OFF — tampilkan animasi flip card setelah pull',
+        'wish-anim.skip': '⏭ Skip',
 
         // ── Redeem ──
         'redeem.title': 'Redeem Code',
@@ -446,6 +461,21 @@ const EN: Dict = {
         'pity-setup.preset.soft': 'Soft Pity Zone',
         'pity-setup.preset.near-hard': 'Near Hard Pity',
         'pity-setup.preset.guaranteed': 'Guaranteed Featured',
+        // Per-mode pity (v2)
+        'pity-setup.tab.character': 'Character Event',
+        'pity-setup.tab.standard': 'Standard Wish',
+        'pity-setup.tab.novice': 'Novice Wish',
+        'pity-setup.section.per-mode': 'Set pity per banner — Character Event, Standard, and Novice each have independent pity counters, just like the real game. Primogem is shared.',
+        'pity-setup.guaranteed-5-disabled-standard': '◈ Standard Wish has no rate-up / 50/50, so no Guaranteed Featured toggle. 5★/4★ pity still applies.',
+        'pity-setup.guaranteed-5-disabled-novice': '✚ Novice Wish uses the same pool as Standard Wish (Wanderlust Invocation). No 50/50.',
+        'pity-setup.primogem-shared': '(shared across all banners)',
+        'pity-setup.current-state.title': 'Current State — All Banners',
+        'pity-setup.current-state.active': 'ACTIVE',
+        // Skip animation
+        'wish.skip-animation.label': 'Skip Animation',
+        'wish.skip-animation.on': 'ON — pull goes straight to history, no flip modal',
+        'wish.skip-animation.off': 'OFF — show flip-card animation after pull',
+        'wish-anim.skip': '⏭ Skip',
 
         // ── Redeem ──
         'redeem.title': 'Redeem Code',
