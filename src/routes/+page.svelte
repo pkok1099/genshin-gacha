@@ -25,6 +25,18 @@
                 banners.hydrateBanners(data.banners);
         }
 
+        // OG/share image = current featured banner character's splash art
+        // (build-time data, so it renders into the prerendered HTML).
+        let ogFeatured = $derived(
+                data?.banners
+                        ?.find((b) => b.characters.some((c) => c.rarity === 5))
+                        ?.characters.find((c) => c.rarity === 5)
+        );
+        let ogImageUrl = $derived(
+                ogFeatured ? characterGachaSplashUrl(slugifyName(ogFeatured.name)) : ''
+        );
+        let ogImageAlt = $derived(ogFeatured?.name ?? 'Genshin Impact Wish Simulator');
+
         onMount(() => {
                 // Background refresh — swap stale or offline build-time data for
                 // fresh API data, but skip the extra request when data is current.
@@ -49,6 +61,9 @@
         <meta name="description" content={t('home.tagline')} />
         <meta property="og:title" content="{t('home.title')} — Home" />
         <meta property="og:description" content={t('home.tagline')} />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:alt" content={ogImageAlt} />
+        <meta name="twitter:image" content={ogImageUrl} />
         <meta name="twitter:title" content="{t('home.title')} — Home" />
 </svelte:head>
 

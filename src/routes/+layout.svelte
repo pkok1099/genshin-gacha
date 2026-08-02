@@ -124,15 +124,11 @@
 </script>
 
 <svelte:head>
-        <!-- Default social-share metadata; pages override og:title/og:description. -->
+        <!-- Default social-share metadata; pages set og:title/og:description
+             and their own og:image (screenshot or current banner character). -->
         <meta property="og:site_name" content="Genshin Impact Wish Simulator" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
-        <meta property="og:image:width" content="1280" />
-        <meta property="og:image:height" content="577" />
-        <meta property="og:image:alt" content="Genshin Impact Wish Simulator" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
         <meta name="theme-color" content="#0B1020" />
 </svelte:head>
 

@@ -150,6 +150,9 @@
         <meta property="og:title" content="Pity Setup — Genshin Impact Simulator" />
         <meta property="og:description" content="Atur pity counter per banner: character event, standard, dan novice wish." />
         <meta name="twitter:title" content="Pity Setup — Genshin Impact Simulator" />
+        <meta property="og:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
+        <meta property="og:image:alt" content="Genshin Impact Wish Simulator" />
+        <meta name="twitter:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
 </svelte:head>
 
 <div class="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">

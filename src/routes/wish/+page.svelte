@@ -11,7 +11,7 @@
         import WhatIfSimulator from '$lib/components/WhatIfSimulator.svelte';
         import StreakTracker from '$lib/components/StreakTracker.svelte';
         import WishAnimation from '$lib/components/WishAnimation.svelte';
-        import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
+        import { characterIconBigUrl, characterGachaSplashUrl, slugifyName } from '$lib/services/characterApi';
         import { STANDARD_WISH_POOLS } from '$lib/utils/standardWishEngine';
         import { fade, fly } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
@@ -35,6 +35,18 @@
         let pendingResults: WishResult[] = $state([]);
         let showAnimation = $state(false);
         let pullError = $state('');
+
+        // OG/share image = current featured banner character's splash art
+        // (build-time data, so it renders into the prerendered HTML).
+        let ogFeatured = $derived(
+                data?.banners
+                        ?.find((b) => b.characters.some((c) => c.rarity === 5))
+                        ?.characters.find((c) => c.rarity === 5)
+        );
+        let ogImageUrl = $derived(
+                ogFeatured ? characterGachaSplashUrl(slugifyName(ogFeatured.name)) : ''
+        );
+        let ogImageAlt = $derived(ogFeatured?.name ?? 'Genshin Impact Wish Simulator');
 
         onMount(() => {
                 // Background refresh — swap stale or offline build-time data for
@@ -209,6 +221,9 @@
         <meta name="description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
         <meta property="og:title" content="{t('wish.title')}" />
         <meta property="og:description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:alt" content={ogImageAlt} />
+        <meta name="twitter:image" content={ogImageUrl} />
         <meta name="twitter:title" content="{t('wish.title')}" />
 </svelte:head>
 

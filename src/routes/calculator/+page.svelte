@@ -143,6 +143,9 @@
         <meta property="og:title" content="{t('calc.title')} — Genshin Impact Simulator" />
         <meta property="og:description" content="Hitung berapa pull dan primogem yang dibutuhkan untuk target 5★, lengkap dengan kurva soft pity." />
         <meta name="twitter:title" content="{t('calc.title')} — Genshin Impact Simulator" />
+        <meta property="og:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
+        <meta property="og:image:alt" content="Genshin Impact Wish Simulator" />
+        <meta name="twitter:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
 </svelte:head>
 
 <div class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">
