@@ -146,6 +146,10 @@
 
 <svelte:head>
         <title>Pity Setup — Genshin Impact Simulator</title>
+        <meta name="description" content="Atur pity counter per banner: character event, standard, dan novice wish." />
+        <meta property="og:title" content="Pity Setup — Genshin Impact Simulator" />
+        <meta property="og:description" content="Atur pity counter per banner: character event, standard, dan novice wish." />
+        <meta name="twitter:title" content="Pity Setup — Genshin Impact Simulator" />
 </svelte:head>
 
 <div class="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">

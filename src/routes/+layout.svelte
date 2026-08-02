@@ -123,6 +123,19 @@
         }
 </script>
 
+<svelte:head>
+        <!-- Default social-share metadata; pages override og:title/og:description. -->
+        <meta property="og:site_name" content="Genshin Impact Wish Simulator" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
+        <meta property="og:image:width" content="1280" />
+        <meta property="og:image:height" content="577" />
+        <meta property="og:image:alt" content="Genshin Impact Wish Simulator" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://xiaoxiaohui.my.id/screenshot.png" />
+        <meta name="theme-color" content="#0B1020" />
+</svelte:head>
+
 <!-- ═══ Top Bar ═══ -->
 <header class="sticky top-0 z-40 backdrop-blur-md bg-[#0B1020]/80 border-b border-[#C9A45A]/15">
         <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">

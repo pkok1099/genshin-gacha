@@ -206,6 +206,10 @@
 
 <svelte:head>
         <title>{t('wish.title')}</title>
+        <meta name="description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
+        <meta property="og:title" content="{t('wish.title')}" />
+        <meta property="og:description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
+        <meta name="twitter:title" content="{t('wish.title')}" />
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">

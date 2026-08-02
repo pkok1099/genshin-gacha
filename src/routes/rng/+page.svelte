@@ -44,6 +44,10 @@
 
 <svelte:head>
         <title>{t('rng.title')} — Genshin Impact</title>
+        <meta name="description" content="Simulator RNG Genshin Impact: artifact, weapon, cooking, boss drop, domain, dan lainnya." />
+        <meta property="og:title" content="{t('rng.title')} — Genshin Impact" />
+        <meta property="og:description" content="Simulator RNG Genshin Impact: artifact, weapon, cooking, boss drop, domain, dan lainnya." />
+        <meta name="twitter:title" content="{t('rng.title')} — Genshin Impact" />
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-8">

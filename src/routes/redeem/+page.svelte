@@ -103,6 +103,10 @@
 
 <svelte:head>
         <title>{t('redeem.title')} — Genshin Impact Simulator</title>
+        <meta name="description" content="Cek kode redeem Genshin Impact yang aktif dan klaim hadiah primogem kamu." />
+        <meta property="og:title" content="{t('redeem.title')} — Genshin Impact Simulator" />
+        <meta property="og:description" content="Cek kode redeem Genshin Impact yang aktif dan klaim hadiah primogem kamu." />
+        <meta name="twitter:title" content="{t('redeem.title')} — Genshin Impact Simulator" />
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">

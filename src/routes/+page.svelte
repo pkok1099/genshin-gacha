@@ -47,6 +47,9 @@
 <svelte:head>
         <title>{t('home.title')} — Home</title>
         <meta name="description" content={t('home.tagline')} />
+        <meta property="og:title" content="{t('home.title')} — Home" />
+        <meta property="og:description" content={t('home.tagline')} />
+        <meta name="twitter:title" content="{t('home.title')} — Home" />
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12 space-y-10">

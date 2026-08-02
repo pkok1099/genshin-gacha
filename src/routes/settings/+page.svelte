@@ -34,6 +34,10 @@
 
 <svelte:head>
         <title>{t('nav.settings')} — Genshin Impact Simulator</title>
+        <meta name="description" content="Atur preferensi simulasi: bahasa, suara, animasi wish, dan lainnya." />
+        <meta property="og:title" content="{t('nav.settings')} — Genshin Impact Simulator" />
+        <meta property="og:description" content="Atur preferensi simulasi: bahasa, suara, animasi wish, dan lainnya." />
+        <meta name="twitter:title" content="{t('nav.settings')} — Genshin Impact Simulator" />
 </svelte:head>
 
 <div class="max-w-3xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 space-y-6">
