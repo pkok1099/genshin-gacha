@@ -5,7 +5,7 @@
         "type": "module",
         "scripts": {
                 "dev": "vite dev",
-                "build": "vite build",
+                "build": "python3 scripts/og-gen.py && vite build",
                 "preview": "vite preview",
                 "prepare": "svelte-kit sync || echo ''",
                 "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

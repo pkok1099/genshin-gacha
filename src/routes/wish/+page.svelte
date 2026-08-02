@@ -43,9 +43,6 @@
                         ?.find((b) => b.characters.some((c) => c.rarity === 5))
                         ?.characters.find((c) => c.rarity === 5)
         );
-        let ogImageUrl = $derived(
-                ogFeatured ? characterGachaSplashUrl(slugifyName(ogFeatured.name)) : ''
-        );
         let ogImageAlt = $derived(ogFeatured?.name ?? 'Genshin Impact Wish Simulator');
 
         onMount(() => {
@@ -221,9 +218,11 @@
         <meta name="description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
         <meta property="og:title" content="{t('wish.title')}" />
         <meta property="og:description" content="Simulasikan wish Genshin Impact: pity counter, soft pity, 50/50, dan banner aktif. Gratis — semua data tersimpan di browser." />
-        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image" content="https://xiaoxiaohui.my.id/og-banner.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={ogImageAlt} />
-        <meta name="twitter:image" content={ogImageUrl} />
+        <meta name="twitter:image" content="https://xiaoxiaohui.my.id/og-banner.png" />
         <meta name="twitter:title" content="{t('wish.title')}" />
 </svelte:head>
 
