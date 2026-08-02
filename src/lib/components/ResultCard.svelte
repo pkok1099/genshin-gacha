@@ -1,7 +1,7 @@
 <script lang="ts">
         import type { WishResult } from '$lib/stores/gameState.svelte';
         import { playCardFlip } from '$lib/audio/synth.svelte';
-        import { untrack } from 'svelte';
+        import SkeletonImage from './SkeletonImage.svelte';
 
         let {
                 result,
@@ -14,70 +14,6 @@
         } = $props();
 
         let isFlipped: boolean = $state(false);
-        let imgLoaded: boolean = $state(false);
-        let imgFailed: boolean = $state(false);
-
-        // ── 3-tier image fallback chain ──────────────────────────────────────────
-        // Order: HoYoverse CDN (official, always current) → jmp.blue (community) → SVG
-        // We try HoYoverse FIRST when available because new characters (Columbina,
-        // Jahoda, Ororon, etc.) often 404 on jmp.blue for weeks after release.
-        // untrack: we intentionally capture initial values; result is keyed per
-        // wish so the component remounts on each new pull.
-        const { rarity, fallbackIcon, icon } = untrack(() => ({
-                rarity: result.rarity,
-                fallbackIcon: result.fallbackIcon,
-                icon: result.icon
-        }));
-
-        const iconSources: string[] = (() => {
-                const list: string[] = [];
-                if (fallbackIcon) list.push(fallbackIcon);  // HoYoverse CDN
-                if (icon) list.push(icon);                   // jmp.blue
-                return list;
-        })();
-
-        // If both are missing, use SVG fallback immediately
-        const svgFallback = 'data:image/svg+xml,' + encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-                '<rect fill="#1A2337" width="100" height="100"/>' +
-                `<text fill="#E6C77A" font-size="14" x="50" y="55" text-anchor="middle">★${rarity}</text>` +
-                '</svg>'
-        );
-
-        if (iconSources.length === 0) iconSources.push(svgFallback);
-
-        let currentSrcIdx = $state(0);
-        let currentSrc = $derived(iconSources[currentSrcIdx] ?? svgFallback);
-
-        $effect(() => {
-                // Reset image state when result changes (defensive — keyed each should remount)
-                imgLoaded = false;
-                imgFailed = false;
-                currentSrcIdx = 0;
-        });
-
-        function handleImgError(e: Event) {
-                const img = e.currentTarget as HTMLImageElement;
-                // Try next source in the chain
-                if (currentSrcIdx < iconSources.length - 1) {
-                        currentSrcIdx += 1;
-                        // imgLoaded stays false — shimmer placeholder remains visible
-                        // while the next source loads.
-                } else {
-                        // Exhausted all sources — use SVG fallback permanently.
-                        // Update the reactive source so Svelte controls the DOM
-                        // (avoids drift between derived `currentSrc` and manual `img.src`).
-                        currentSrcIdx = iconSources.length; // out-of-range → derived falls back to svgFallback
-                        imgFailed = true;
-                        imgLoaded = true;
-                        // Belt-and-suspenders: also set directly in case derived hasn't propagated.
-                        img.src = svgFallback;
-                }
-        }
-
-        function handleImgLoad() {
-                imgLoaded = true;
-        }
 
         // ── Flip animation ──
         $effect(() => {
@@ -166,30 +102,18 @@
                                 <div class="particle-burst"></div>
                         {/if}
 
-                        <!-- Image — eager loading (we're in a modal, want immediate load).
-                             3-tier fallback chain handled in script. -->
+                        <!-- Image — skeleton-first; 3-tier fallback chain handled by SkeletonImage.
+                             If every source 404s the shimmering skeleton stays as the placeholder. -->
                         <div class="relative w-full h-[65%] bg-[#0B1020]/70 overflow-hidden">
-                                {#if !imgLoaded}
-                                        <div class="absolute inset-0 bg-[#1A2337] animate-pulse"></div>
-                                {/if}
-                                {#if imgFailed}
-                                        <!-- Visible error placeholder so the card never appears "empty"
-                                             or "missing" after flip when all image sources 404. -->
-                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2 bg-[#1A2337]">
-                                                <div class="text-2xl {starColor} mb-1">✦</div>
-                                                <div class="text-[9px] text-[#8E97AA] uppercase tracking-wider">No Image</div>
-                                        </div>
-                                {:else}
-                                        <img
-                                                src={currentSrc}
-                                                alt={result.name}
-                                                loading="eager"
-                                                decoding="async"
-                                                class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {imgLoaded ? 'opacity-100' : 'opacity-0'}"
-                                                onload={handleImgLoad}
-                                                onerror={handleImgError}
-                                        />
-                                {/if}
+                                <SkeletonImage
+                                        src={result.fallbackIcon ?? ''}
+                                        fallbacks={[result.icon ?? '']}
+                                        alt={result.name}
+                                        loading="eager"
+                                        glyph="★"
+                                        glyphClass={starColor}
+                                        label={result.rarity === 5 ? '5★' : result.rarity === 4 ? '4★' : '3★'}
+                                />
                         </div>
 
                         <!-- Info -->

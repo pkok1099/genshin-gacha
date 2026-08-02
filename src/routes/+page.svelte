@@ -4,6 +4,7 @@
         import { getGameState } from '$lib/stores/gameState.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
         import SkeletonCard from '$lib/components/SkeletonCard.svelte';
+        import SkeletonImage from '$lib/components/SkeletonImage.svelte';
         import { characterIconBigUrl, characterGachaSplashUrl, slugifyName } from '$lib/services/characterApi';
         import { fly, fade } from 'svelte/transition';
         import { cubicOut } from 'svelte/easing';
@@ -21,8 +22,6 @@
                         banners.fetchBanners();
                 }
         });
-
-        let splashFailed = $state(false);
 
         function handleCta() {
                 primeAudio();
@@ -109,25 +108,16 @@
                                                 <div class="absolute inset-0 opacity-50"
                                                         style="background: radial-gradient(ellipse at center 70%, rgba(230,199,122,0.4), transparent 60%);"></div>
 
-                                                {#if !splashFailed}
-                                                        <img
-                                                                src={characterGachaSplashUrl(slugifyName(banners.featured5Star.name))}
-                                                                alt={banners.featured5Star.name}
-                                                                class="relative h-full w-full object-contain object-bottom drop-shadow-2xl"
-                                                                onerror={(e: Event) => { splashFailed = true; (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                                                        />
-                                                {:else}
-                                                        <img
-                                                                src={characterIconBigUrl(slugifyName(banners.featured5Star.name))}
-                                                                alt={banners.featured5Star.name}
-                                                                class="relative h-3/4 w-auto object-contain object-bottom drop-shadow-2xl"
-                                                                onerror={(e: Event) => {
-                                                                        const img = e.currentTarget as HTMLImageElement;
-                                                                        const fb = banners.featured5Star?.icon;
-                                                                        if (fb && img.src !== fb) img.src = fb;
-                                                                }}
-                                                        />
-                                                {/if}
+                                                <SkeletonImage
+                                                        src={characterGachaSplashUrl(slugifyName(banners.featured5Star.name))}
+                                                        fallbacks={[characterIconBigUrl(slugifyName(banners.featured5Star.name)), banners.featured5Star.icon ?? '']}
+                                                        alt={banners.featured5Star.name}
+                                                        loading="eager"
+                                                        class="absolute inset-0"
+                                                        imgClass="object-contain object-bottom drop-shadow-2xl"
+                                                        glyph={banners.featured5Star.name.charAt(0)}
+                                                        label={banners.featured5Star.element}
+                                                />
 
                                                 <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0B1020] via-[#0B1020]/70 to-transparent">
                                                         <div class="text-[10px] text-[#E6C77A] uppercase tracking-wider mb-1">{t('wish.featured')}</div>
@@ -137,7 +127,7 @@
                                                         <div class="text-xs text-[#B8C1D3] mt-0.5">{banners.featured5Star.element} • {t('wish.rate-up')}</div>
                                                 </div>
                                         </div>
-                                {:else if banners.isLoading}
+                                {:else}
                                         <div class="absolute inset-0 flex items-end justify-center">
                                                 <SkeletonCard variant="splash" />
                                         </div>

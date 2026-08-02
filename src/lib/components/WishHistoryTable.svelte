@@ -1,5 +1,6 @@
 <script lang="ts">
         import type { WishResult } from '$lib/stores/gameState.svelte';
+        import SkeletonImage from './SkeletonImage.svelte';
 
         let {
                 history = [],
@@ -115,20 +116,14 @@
                                                         {#if !compact}
                                                                 <td class="px-3 py-2">
                                                                         <div class="w-9 h-9 rounded-md overflow-hidden border border-[#24314A] bg-[#0B1020]">
-                                                                                <img
-                                                                                        src={item.fallbackIcon ?? item.icon}
+                                                                                <SkeletonImage
+                                                                                        src={item.fallbackIcon ?? ''}
+                                                                                        fallbacks={[item.icon ?? '']}
                                                                                         alt={item.name}
                                                                                         loading="lazy"
-                                                                                        decoding="async"
-                                                                                        class="w-full h-full object-cover"
-                                                                                        onerror={(e: Event) => {
-                                                                                                const img = e.currentTarget as HTMLImageElement;
-                                                                                                if (img.src !== item.icon && item.icon) {
-                                                                                                        img.src = item.icon;
-                                                                                                } else {
-                                                                                                        img.style.opacity = '0';
-                                                                                                }
-                                                                                        }}
+                                                                                        class="relative w-9 h-9"
+                                                                                        glyph={item.name.charAt(0)}
+                                                                                        glyphClass={item.rarity === 5 ? 'text-[#E6C77A]' : 'text-[#B8C1D3]'}
                                                                                 />
                                                                         </div>
                                                                 </td>

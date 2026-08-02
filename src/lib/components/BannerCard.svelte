@@ -2,6 +2,7 @@
         import type { BannerData } from '$lib/services/bannerApi';
         import { characterIconBigUrl, slugifyName } from '$lib/services/characterApi';
         import { t, localeKey } from '$lib/i18n/index.svelte';
+        import SkeletonImage from './SkeletonImage.svelte';
 
         // Re-render on locale change
         void localeKey();
@@ -55,21 +56,13 @@
                 <!-- Featured 5★ -->
                 {#if featured5Star}
                         <div class="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden border-2 border-[#C9A45A]/50 bg-[#0B1020]">
-                                <img
-                                        src={featured5Star.icon ?? characterIconBigUrl(slugifyName(featured5Star.name))}
+                                <SkeletonImage
+                                        src={featured5Star.icon ?? ''}
+                                        fallbacks={[characterIconBigUrl(slugifyName(featured5Star.name))]}
                                         alt={featured5Star.name}
                                         loading="eager"
-                                        decoding="async"
-                                        class="w-full h-full object-cover"
-                                        onerror={(e: Event) => {
-                                                const img = e.currentTarget as HTMLImageElement;
-                                                const jmpUrl = characterIconBigUrl(slugifyName(featured5Star.name));
-                                                if (img.src !== jmpUrl) {
-                                                        img.src = jmpUrl;
-                                                } else {
-                                                        img.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1A2337" width="100" height="100"/><text fill="#E6C77A" font-size="14" x="50" y="55" text-anchor="middle">★5</text></svg>');
-                                                }
-                                        }}
+                                        glyph={featured5Star.name.charAt(0)}
+                                        label={featured5Star.element}
                                 />
                         </div>
                 {/if}

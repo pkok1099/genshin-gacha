@@ -5,6 +5,7 @@
         import { toast } from '$lib/stores/toast.svelte';
         import BannerCard from '$lib/components/BannerCard.svelte';
         import SkeletonCard from '$lib/components/SkeletonCard.svelte';
+        import SkeletonImage from '$lib/components/SkeletonImage.svelte';
         import PityBar from '$lib/components/PityBar.svelte';
         import ModePityBadge from '$lib/components/ModePityBadge.svelte';
         import WhatIfSimulator from '$lib/components/WhatIfSimulator.svelte';
@@ -26,7 +27,6 @@
         let pendingResults: WishResult[] = $state([]);
         let showAnimation = $state(false);
         let pullError = $state('');
-        let splashFailed = $state(false);
 
         onMount(() => {
                 if (banners.banners.length === 0 && !banners.isLoading) {
@@ -54,10 +54,6 @@
         });
 
         // Reset splash error when switching modes
-        $effect(() => {
-                void game.wishMode;
-                splashFailed = false;
-        });
 
         function handleSinglePull() {
                 primeAudio();
@@ -160,7 +156,6 @@
 
         function switchMode(mode: WishMode) {
                 game.setWishMode(mode);
-                splashFailed = false;
                 pullError = '';
         }
 
@@ -241,29 +236,22 @@
                                                         <div class="absolute inset-0 flex items-end justify-center" in:fly={{ y: 20, duration: 500, easing: cubicOut }}>
                                                                 <div class="absolute inset-0 opacity-50"
                                                                         style="background: radial-gradient(ellipse at center 80%, rgba(230,199,122,0.5), transparent 65%);"></div>
-                                                                {#if !splashFailed}
-                                                                        <img
-                                                                                src={characterIconBigUrl(slugifyName(banners.featured5Star.name))}
-                                                                                alt={banners.featured5Star.name}
-                                                                                class="relative h-full w-full object-contain object-bottom drop-shadow-2xl"
-                                                                                onerror={(e: Event) => {
-                                                                                        const img = e.currentTarget as HTMLImageElement;
-                                                                                        const fb = banners.featured5Star?.icon;
-                                                                                        if (fb && img.src !== fb) img.src = fb;
-                                                                                        else splashFailed = true;
-                                                                                }}
-                                                                        />
-                                                                {:else}
-                                                                        <div class="relative h-full w-full flex items-end justify-center">
-                                                                                <div class="text-6xl text-[#E6C77A] mb-12">✦</div>
-                                                                        </div>
-                                                                {/if}
+                                                                <SkeletonImage
+                                                                        src={characterIconBigUrl(slugifyName(banners.featured5Star.name))}
+                                                                        fallbacks={[banners.featured5Star.icon ?? '']}
+                                                                        alt={banners.featured5Star.name}
+                                                                        loading="eager"
+                                                                        class="absolute inset-0"
+                                                                        imgClass="object-contain object-bottom drop-shadow-2xl"
+                                                                        glyph={banners.featured5Star.name.charAt(0)}
+                                                                        label={banners.featured5Star.element}
+                                                                />
                                                         </div>
                                                 {/key}
-                                        {:else if banners.isLoading}
-                                                <SkeletonCard variant="splash" />
                                         {:else}
-                                                <div class="absolute inset-0 flex items-center justify-center text-[#8E97AA] text-sm">{t('wish.no-banner')}</div>
+                                                <div class="absolute inset-0 flex items-end justify-center">
+                                                        <SkeletonCard variant="splash" />
+                                                </div>
                                         {/if}
                                 {:else if game.wishMode === 'standard'}
                                         <!-- Standard Wish: show a generic permanent banner splash -->
@@ -284,11 +272,14 @@
                                         <div class="absolute inset-0 flex items-end justify-center" in:fly={{ y: 20, duration: 500, easing: cubicOut }}>
                                                 <div class="absolute inset-0 opacity-50"
                                                         style="background: radial-gradient(ellipse at center 80%, rgba(230,199,122,0.5), transparent 65%);"></div>
-                                                <img
+                                                <SkeletonImage
                                                         src={characterIconBigUrl('noelle')}
                                                         alt="Noelle"
-                                                        class="relative h-full w-full object-contain object-bottom drop-shadow-2xl"
-                                                        onerror={(e: Event) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                        loading="eager"
+                                                        class="absolute inset-0"
+                                                        imgClass="object-contain object-bottom drop-shadow-2xl"
+                                                        glyph="N"
+                                                        label="Noelle"
                                                 />
                                         </div>
                                 {/if}
