@@ -126,6 +126,26 @@ async function fetchBanners(): Promise<void> {
     return promise;
 }
 
+// ─── Hydrate from build-time data (SSG) ─────────────────────────────────────
+// Seeds the store with banner data fetched during prerender (page load) so
+// names/versions are baked into the static HTML. Called synchronously from
+// page components before first render so the server and client render
+// identically during hydration.
+export function hydrateBanners(data: BannerData[]): void {
+    if (data.length === 0 || banners.length > 0) return;
+    isLoading = false;
+    apiError = '';
+    banners = data;
+    for (const b of data) registerBannerInGame(b);
+    // Auto-select first if nothing selected yet
+    if (!game.selectedBannerId && data.length > 0) {
+        game.selectBanner(String(data[0].id));
+    }
+    // Extract weapon banner (banner with weapons array containing 5★)
+    const wb = data.find((b) => Array.isArray(b.weapons) && b.weapons.some((w) => w.rarity === 5));
+    weaponBanner = wb ?? null;
+}
+
 function selectBanner(id: string): void {
     game.selectBanner(id);
 }
@@ -201,7 +221,8 @@ export function getBannerStore() {
         get weaponBannerVersion() { return getWeaponBannerVersion(); },
         get weaponBannerCountdown() { return getWeaponBannerCountdown(); },
         fetchBanners,
-        selectBanner
+        selectBanner,
+        hydrateBanners
     };
 }
 

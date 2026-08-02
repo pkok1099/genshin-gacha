@@ -14,11 +14,26 @@
         // Re-render on locale change
         void localeKey();
 
+        let { data } = $props();
+
         const banners = getBannerStore();
         const game = getGameState();
 
+        // Seed from build-time (SSG) banner data before first render so the
+        // hydrated DOM matches the prerendered HTML (names/versions included).
+        if (data?.banners?.length && banners.banners.length === 0) {
+                banners.hydrateBanners(data.banners);
+        }
+
         onMount(() => {
+                // Background refresh — swap stale or offline build-time data for
+                // fresh API data, but skip the extra request when data is current.
                 if (banners.banners.length === 0 && !banners.isLoading) {
+                        banners.fetchBanners();
+                } else if (
+                        banners.banners.some((b) => b.id === 0) ||
+                        banners.banners.every((b) => b.end_time * 1000 < Date.now())
+                ) {
                         banners.fetchBanners();
                 }
         });
